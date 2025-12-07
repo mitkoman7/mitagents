@@ -1,0 +1,13 @@
+INFO:     Started server process [74145]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8084 (Press CTRL+C to quit)
+============================================================
+🗺️  Starting TomTom Maps MCP Server
+============================================================
+API Key: ✅ Configured
+Port: 8084
+💰 FREE TIER: 2,500 requests/day (75,000/month)
+============================================================
+INFO:     127.0.0.1:58346 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58359 - "GET /health HTTP/1.1" 200 OK

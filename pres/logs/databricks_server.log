@@ -1,0 +1,59 @@
+INFO:     Started server process [69919]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8085 (Press CTRL+C to quit)
+============================================================
+📊 Starting Databricks MCP Server
+============================================================
+Host: https://adb-1960473997986044.4.azuredatabricks.net
+Token: ✅ Configured
+Cluster: 1206-065908-hj0eopa8
+Port: 8085
+============================================================
+📊 Executing: list_tables
+📦 Arguments: {}
+📋 Listing tables in dbrmitko.default
+📊 Executing SQL query...
+Query: USE CATALOG dbrmitko; SHOW TABLES IN default...
+❌ Error: Client error '400 Bad Request' for url 'https://adb-1960473997986044.4.azuredatabricks.net/api/2.0/sql/statements'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
+⚠️  SQL warehouse not available, trying cluster for query...
+✅ Found 0 tables
+✅ Execution complete
+INFO:     127.0.0.1:58169 - "POST /execute HTTP/1.1" 200 OK
+📊 Executing: execute_sql
+📦 Arguments: {'query': 'SELECT * FROM dbrmitko.default.hr_attendance_dummy LIMIT 5'}
+📊 Executing SQL query...
+Query: SELECT * FROM dbrmitko.default.hr_attendance_dummy LIMIT 5...
+❌ Error: Client error '400 Bad Request' for url 'https://adb-1960473997986044.4.azuredatabricks.net/api/2.0/sql/statements'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
+⚠️  SQL warehouse not available, trying cluster for query...
+✅ Execution complete
+INFO:     127.0.0.1:58236 - "POST /execute HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58286 - "GET /health HTTP/1.1" 200 OK
+📊 Executing: list_clusters
+📦 Arguments: {}
+🖥️  Listing clusters...
+✅ Found 1 clusters
+✅ Execution complete
+INFO:     127.0.0.1:58291 - "POST /execute HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58306 - "GET /health HTTP/1.1" 200 OK
+📊 Executing: list_clusters
+📦 Arguments: {}
+🖥️  Listing clusters...
+✅ Found 1 clusters
+✅ Execution complete
+INFO:     127.0.0.1:58310 - "POST /execute HTTP/1.1" 200 OK
+📊 Executing: list_databases
+📦 Arguments: {'catalog': 'dbrmitko'}
+📋 Listing databases in dbrmitko
+📊 Executing SQL query...
+Query: SHOW DATABASES...
+❌ Error: Client error '400 Bad Request' for url 'https://adb-1960473997986044.4.azuredatabricks.net/api/2.0/sql/statements'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
+⚠️  SQL warehouse not available, trying cluster for query...
+⚠️  SQL warehouse not available, trying cluster...
+⚠️  Both warehouse and cluster unavailable
+✅ Execution complete
+INFO:     127.0.0.1:58314 - "POST /execute HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58335 - "GET /health HTTP/1.1" 200 OK

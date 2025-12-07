@@ -1,0 +1,14 @@
+/Users/dimitargrigorov/soccer/venv/lib/python3.9/site-packages/google/api_core/_python_version_support.py:252: FutureWarning: You are using a Python version (3.9.6) past its end of life. Google will update google.api_core with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade to the latest Python version, or at least Python 3.10, and then update google.api_core.
+  warnings.warn(message, FutureWarning)
+INFO:     Started server process [74129]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8082 (Press CTRL+C to quit)
+An error occurred: module 'importlib.metadata' has no attribute 'packages_distributions'
+🚀 Starting Google MCP Server (Simple - No OAuth)...
+📍 Server: http://localhost:8082
+
+✅ Gmail configured: mitkoman@gmail.com
+
+INFO:     127.0.0.1:58343 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58356 - "GET /health HTTP/1.1" 200 OK

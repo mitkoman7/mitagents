@@ -1,0 +1,31 @@
+/Users/dimitargrigorov/soccer/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+/Users/dimitargrigorov/soccer/venv/lib/python3.9/site-packages/google/api_core/_python_version_support.py:252: FutureWarning: You are using a Python version (3.9.6) past its end of life. Google will update google.api_core with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade to the latest Python version, or at least Python 3.10, and then update google.api_core.
+  warnings.warn(message, FutureWarning)
+An error occurred: module 'importlib.metadata' has no attribute 'packages_distributions'
+✅ LangChain connected!
+✅ LangChain Agent with Memory initialized! (26 tools)
+============================================================
+🚀 Starting AI Assistant with LangChain Memory
+============================================================
+📍 Soccer MCP:      http://localhost:8081
+📍 Email MCP:       http://localhost:8082
+📍 Maps MCP:        http://localhost:8083
+📍 TomTom MCP:      http://localhost:8084 (FREE - Traffic)
+📍 Databricks MCP:  http://localhost:8085
+🌐 Web App:         http://localhost:5002
+
+System Status:
+  ✅ LangChain:  Connected
+  ✅ Agent+Memory: Ready
+
+✨ MEMORY ENABLED - I'll remember your conversation!
+🛠️  26 tools available (Soccer, Email, Maps, TomTom, Databricks)
+🚗 TomTom: Real-time traffic, 75,000 FREE requests/month
+📊 Databricks: Natural language to SQL, queries, notebooks, clusters, jobs
+============================================================
+ * Serving Flask app 'flask_app_simple'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5005
+[33mPress CTRL+C to quit[0m

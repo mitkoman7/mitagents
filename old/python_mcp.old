@@ -1,0 +1,228 @@
+from flask import Flask, render_template_string, request, jsonify
+from openai import AzureOpenAI
+import os
+import json
+import asyncio
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+from dotenv import load_dotenv
+import threading
+
+load_dotenv()
+
+app = Flask(__name__)
+
+# Azure OpenAI Configuration
+client = AzureOpenAI(
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+    api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview"),
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
+)
+
+# Global MCP session
+mcp_session = None
+mcp_tools = []
+mcp_lock = threading.Lock()
+
+HTML_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Soccer Results AI - True MCP</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; }
+        .badge { background: #4CAF50; color: white; padding: 5px 10px; border-radius: 3px; font-size: 12px; }
+        .chat-box { border: 1px solid #ddd; padding: 20px; height: 400px; overflow-y: auto; margin-bottom: 20px; border-radius: 5px; background: #f9f9f9; }
+        .message { margin: 10px 0; padding: 10px; border-radius: 5px; white-space: pre-wrap; }
+        .user-message { background: #e3f2fd; text-align: right; }
+        .assistant-message { background: #f1f8e9; }
+        .input-area { display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        button { padding: 12px 25px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .example-query { padding: 8px; margin: 5px 0; background: white; border-radius: 3px; cursor: pointer; border: 1px solid #ddd; }
+        .example-query:hover { background: #e3f2fd; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚽ Soccer Results AI <span class="badge">TRUE MCP</span></h1>
+        <p style="text-align: center; color: #666;">Using Real MCP Protocol (STDIO)</p>
+        <div class="chat-box" id="chatBox"></div>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Ask about soccer..." onkeypress="if(event.key==='Enter') sendMessage()">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+        <div style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 5px;">
+            <h3 style="margin-top: 0;">Examples:</h3>
+            <div class="example-query" onclick="setQuery(this.innerText)">What were the latest Premier League results?</div>
+            <div class="example-query" onclick="setQuery(this.innerText)">Show me recent matches for Manchester United</div>
+            <div class="example-query" onclick="setQuery(this.innerText)">What are the current Premier League standings?</div>
+        </div>
+    </div>
+    <script>
+        function setQuery(text) { document.getElementById('userInput').value = text; }
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            if (!message) return;
+            addMessage(message, 'user');
+            input.value = '';
+            const loadingId = addMessage('Thinking...', 'assistant');
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ message: message })
+                });
+                const data = await response.json();
+                document.getElementById(loadingId).remove();
+                addMessage(data.response, 'assistant');
+            } catch (error) {
+                document.getElementById(loadingId).remove();
+                addMessage('Error: ' + error.message, 'assistant');
+            }
+        }
+        function addMessage(text, sender) {
+            const chatBox = document.getElementById('chatBox');
+            const messageDiv = document.createElement('div');
+            const id = 'msg-' + Date.now();
+            messageDiv.id = id;
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.textContent = text;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            return id;
+        }
+    </script>
+</body>
+</html>
+"""
+
+async def initialize_mcp():
+    """Initialize MCP connection"""
+    global mcp_session, mcp_tools
+    
+    server_params = StdioServerParameters(
+        command="python",
+        args=[os.path.join(os.path.dirname(__file__), "mcp_server_true.py")]
+    )
+    
+    print("🔌 Connecting to MCP server...")
+    server = await stdio_client(server_params).__aenter__()
+    read, write = server
+    mcp_session = await ClientSession(read, write).__aenter__()
+    
+    await mcp_session.initialize()
+    print("✅ MCP session initialized")
+    
+    tools_response = await mcp_session.list_tools()
+    mcp_tools = tools_response.tools
+    print(f"✅ Loaded {len(mcp_tools)} tools from MCP server")
+
+def run_async(coro):
+    """Run async function in sync context"""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        return loop.run_until_complete(coro)
+    finally:
+        loop.close()
+
+async def chat_with_openai_async(user_message):
+    """Chat with OpenAI using TRUE MCP tools"""
+    global mcp_session, mcp_tools
+    
+    with mcp_lock:
+        if not mcp_session:
+            await initialize_mcp()
+        
+        # Convert MCP tools to OpenAI format
+        tools = [{
+            "type": "function",
+            "function": {
+                "name": tool.name,
+                "description": tool.description,
+                "parameters": tool.inputSchema
+            }
+        } for tool in mcp_tools]
+        
+        messages = [{"role": "user", "content": user_message}]
+        
+        # Call OpenAI
+        response = client.chat.completions.create(
+            model=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
+            messages=messages,
+            tools=tools,
+            tool_choice="auto"
+        )
+        
+        # Handle tool calls
+        for _ in range(5):
+            if response.choices[0].finish_reason != "tool_calls":
+                break
+            
+            tool_calls = response.choices[0].message.tool_calls
+            if not tool_calls:
+                break
+            
+            messages.append({
+                "role": "assistant",
+                "content": response.choices[0].message.content or ""
+            })
+            
+            # Execute tools via TRUE MCP
+            for tool_call in tool_calls:
+                function_name = tool_call.function.name
+                function_args = json.loads(tool_call.function.arguments)
+                
+                print(f"🔧 Executing MCP tool: {function_name}")
+                
+                # Call tool via MCP protocol
+                result = await mcp_session.call_tool(function_name, function_args)
+                
+                messages.append({
+                    "role": "user",
+                    "content": f"Tool {function_name} result: {result.content[0].text}"
+                })
+            
+            response = client.chat.completions.create(
+                model=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
+                messages=messages,
+                tools=tools,
+                tool_choice="auto"
+            )
+        
+        return response.choices[0].message.content
+
+@app.route('/')
+def index():
+    return render_template_string(HTML_TEMPLATE)
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    try:
+        data = request.json
+        user_message = data.get('message', '')
+        
+        response_text = run_async(chat_with_openai_async(user_message))
+        
+        return jsonify({'response': response_text})
+        
+    except Exception as e:
+        print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'response': f"Error: {str(e)}"})
+
+@app.route('/health')
+def health():
+    return jsonify({"status": "healthy", "mcp": "true"})
+
+if __name__ == '__main__':
+    print("🚀 Starting Soccer AI with TRUE MCP...")
+    print("📍 MCP Server: subprocess (stdio)")
+    print("🌐 App: http://localhost:5000")
+    print("\n⚠️  Starting MCP connection on first request...")
+    app.run(debug=False, port=5000, use_reloader=False)
