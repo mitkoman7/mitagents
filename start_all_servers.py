@@ -13,11 +13,12 @@ import httpx
 
 # Server configurations
 SERVERS = [
-    {"name": "Soccer", "file": "map_server.py", "port": 8081},
-    {"name": "Gmail", "file": "google_mcp_server_simple.py", "port": 8082},
-    {"name": "Google Maps", "file": "google_maps_mcp_server.py", "port": 8083},
-    {"name": "TomTom", "file": "tomtom_mcp_server.py", "port": 8084},
-    {"name": "Databricks", "file": "databricks_mcp_server.py", "port": 8085},
+    {"name": "Soccer", "file": "map_server.py", "port": 8081, "emoji": "⚽"},
+    {"name": "Gmail", "file": "google_mcp_server_simple.py", "port": 8082, "emoji": "📧"},
+    {"name": "Google Maps", "file": "google_maps_mcp_server.py", "port": 8083, "emoji": "🗺️"},
+    {"name": "TomTom", "file": "tomtom_mcp_server.py", "port": 8084, "emoji": "🚗"},
+    {"name": "Databricks", "file": "databricks_mcp_server.py", "port": 8085, "emoji": "📊"},
+    {"name": "Azure", "file": "azure_mcp_server.py", "port": 8086, "emoji": "☁️"},
 ]
 
 processes = []
@@ -71,7 +72,7 @@ def start_servers():
             print(f"⚠️  {server['name']} server ({server['file']}) not found - skipping")
             continue
 
-        print(f"{'⚽' if 'Soccer' in server['name'] else '📧' if 'Gmail' in server['name'] else '🗺️' if 'Maps' in server['name'] else '🚗' if 'TomTom' in server['name'] else '📊'} Starting {server['name']} MCP Server on port {server['port']}...")
+        print(f"{server['emoji']} Starting {server['name']} MCP Server on port {server['port']}...")
 
         # Open log file
         log_file = open(f"logs/{server['name'].lower().replace(' ', '_')}_server.log", "w")

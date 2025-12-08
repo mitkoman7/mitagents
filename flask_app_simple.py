@@ -27,6 +27,7 @@ MCP_GOOGLE_URL = os.getenv("MCP_GOOGLE_URL", "http://localhost:8082")
 MCP_MAPS_URL = os.getenv("MCP_MAPS_URL", "http://localhost:8083")
 MCP_TOMTOM_URL = os.getenv("MCP_TOMTOM_URL", "http://localhost:8084")
 MCP_DATABRICKS_URL = os.getenv("MCP_DATABRICKS_URL", "http://localhost:8085")
+MCP_AZURE_URL = os.getenv("MCP_AZURE_URL", "http://localhost:8086")
 
 # Initialize LangChain with Memory
 LANGCHAIN_CONNECTED = False
@@ -56,7 +57,7 @@ HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AI Assistant with Memory</title>
+    <title>ADDOF</title>
     <style>
         body { 
             font-family: 'Segoe UI', Arial, sans-serif; 
@@ -231,11 +232,12 @@ HTML_TEMPLATE = """
         .tag-gmail { background: #ea4335; color: white; }
         .tag-soccer { background: #fbbc04; color: white; }
         .tag-databricks { background: #ff3621; color: white; }
+        .tag-azure { background: #0078d4; color: white; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🤖 AI Assistant 
+        <h1>🤖 ADDOF
             {% if langchain_connected %}
             <span class="memory-badge">🧠 With Memory</span>
             {% endif %}
@@ -267,6 +269,10 @@ HTML_TEMPLATE = """
             <div class="status-item">
                 <span><span class="status-dot" id="databricksDot"></span>📊 Databricks</span>
                 <span id="databricksStatus">Checking...</span>
+            </div>
+            <div class="status-item">
+                <span><span class="status-dot" id="azureDot"></span>☁️ Azure</span>
+                <span id="azureStatus">Checking...</span>
             </div>
         </div>
         
@@ -316,6 +322,18 @@ HTML_TEMPLATE = """
                     <span class="service-tag tag-databricks">📊</span>
                     List all my Databricks clusters
                 </div>
+                <div class="example-query" onclick="setQuery(this.textContent)">
+                    <span class="service-tag tag-azure">☁️</span>
+                    List my Azure resource groups
+                </div>
+                <div class="example-query" onclick="setQuery(this.textContent)">
+                    <span class="service-tag tag-azure">☁️</span>
+                    What VMs do I have?
+                </div>
+                <div class="example-query" onclick="setQuery(this.textContent)">
+                    <span class="service-tag tag-azure">☁️</span>
+                    Stop my dev-vm to save costs
+                </div>
             </div>
         </div>
     </div>
@@ -359,6 +377,14 @@ HTML_TEMPLATE = """
                 } else {
                     document.getElementById('databricksDot').classList.add('disconnected');
                     document.getElementById('databricksStatus').textContent = '✗ Not configured';
+                }
+
+                if (data.azure_ok) {
+                    document.getElementById('azureDot').classList.add('connected');
+                    document.getElementById('azureStatus').textContent = '✓ Connected';
+                } else {
+                    document.getElementById('azureDot').classList.add('disconnected');
+                    document.getElementById('azureStatus').textContent = '✗ Not configured';
                 }
             } catch (error) {
                 console.error('Status check failed:', error);
@@ -441,6 +467,7 @@ def execute_tool_direct(tool_name, arguments):
     maps_tools = ["search_places", "get_directions", "calculate_distance", "get_place_details", "nearby_search"]
     tomtom_tools = ["search_places_tomtom", "get_directions_tomtom", "calculate_distance_tomtom", "get_traffic_info", "nearby_search_tomtom"]
     databricks_tools = ["natural_language_query", "execute_sql", "list_databases", "list_tables", "get_table_schema", "run_notebook", "list_clusters", "get_cluster_status", "start_cluster", "list_jobs", "run_job", "get_job_run_status", "create_cluster"]
+    azure_tools = ["list_resource_groups", "list_vms", "get_vm_status", "start_vm", "stop_vm", "restart_vm", "list_storage_accounts", "list_databases_azure", "get_subscription_info", "list_resources", "create_storage_account"]
 
     if tool_name in google_tools:
         server_url = MCP_GOOGLE_URL
@@ -448,6 +475,11 @@ def execute_tool_direct(tool_name, arguments):
         server_url = MCP_TOMTOM_URL
         # Remove _tomtom suffix for actual API call
         tool_name = tool_name.replace("_tomtom", "")
+    elif tool_name in azure_tools:
+        server_url = MCP_AZURE_URL
+        # Handle naming conflict with databricks list_databases
+        if tool_name == "list_databases_azure":
+            tool_name = "list_databases"
     elif tool_name in databricks_tools:
         server_url = MCP_DATABRICKS_URL
     elif tool_name in maps_tools:
@@ -623,6 +655,67 @@ if LANGCHAIN_CONNECTED:
                 return json.dumps({"error": "cluster_name is required"})
             return execute_tool_direct("create_cluster", {"cluster_name": cluster_name, "node_type": node_type, "num_workers": num_workers, "spark_version": spark_version, "autotermination_minutes": autotermination_minutes})
 
+        # Azure tools
+        def list_resource_groups_func():
+            """List all Azure resource groups in subscription"""
+            return execute_tool_direct("list_resource_groups", {})
+
+        def list_vms_func(resource_group: str = ""):
+            """List all Azure virtual machines"""
+            return execute_tool_direct("list_vms", {"resource_group": resource_group})
+
+        def get_vm_status_func(vm_name: str, resource_group: str = ""):
+            """Get Azure VM power state and status"""
+            if not vm_name:
+                return json.dumps({"error": "vm_name is required"})
+            return execute_tool_direct("get_vm_status", {"vm_name": vm_name, "resource_group": resource_group})
+
+        def start_vm_func(vm_name: str, resource_group: str = ""):
+            """Start a stopped Azure virtual machine"""
+            if not vm_name:
+                return json.dumps({"error": "vm_name is required"})
+            return execute_tool_direct("start_vm", {"vm_name": vm_name, "resource_group": resource_group})
+
+        def stop_vm_func(vm_name: str, resource_group: str = ""):
+            """Stop Azure VM and deallocate (saves costs)"""
+            if not vm_name:
+                return json.dumps({"error": "vm_name is required"})
+            return execute_tool_direct("stop_vm", {"vm_name": vm_name, "resource_group": resource_group})
+
+        def restart_vm_func(vm_name: str, resource_group: str = ""):
+            """Restart an Azure virtual machine"""
+            if not vm_name:
+                return json.dumps({"error": "vm_name is required"})
+            return execute_tool_direct("restart_vm", {"vm_name": vm_name, "resource_group": resource_group})
+
+        def list_storage_accounts_func(resource_group: str = ""):
+            """List all Azure storage accounts"""
+            return execute_tool_direct("list_storage_accounts", {"resource_group": resource_group})
+
+        def list_databases_azure_func(resource_group: str = ""):
+            """List all Azure SQL servers"""
+            return execute_tool_direct("list_databases_azure", {"resource_group": resource_group})
+
+        def get_subscription_info_func():
+            """Get Azure subscription information"""
+            return execute_tool_direct("get_subscription_info", {})
+
+        def list_resources_func(resource_group: str = "", resource_type: str = ""):
+            """List all Azure resources in a resource group"""
+            return execute_tool_direct("list_resources", {"resource_group": resource_group, "resource_type": resource_type})
+
+        def create_storage_account_func(storage_account_name: str, resource_group: str = "", location: str = "eastus", sku: str = "Standard_LRS", kind: str = "StorageV2"):
+            """Create a new Azure storage account"""
+            if not storage_account_name:
+                return json.dumps({"error": "storage_account_name is required"})
+            return execute_tool_direct("create_storage_account", {
+                "storage_account_name": storage_account_name,
+                "resource_group": resource_group,
+                "location": location,
+                "sku": sku,
+                "kind": kind
+            })
+
         # Create StructuredTools
         tools = [
             StructuredTool.from_function(
@@ -754,6 +847,61 @@ if LANGCHAIN_CONNECTED:
                 func=create_cluster_func,
                 name="create_cluster",
                 description="Create a new Databricks cluster with specified configuration. Single-node by default (num_workers=0)."
+            ),
+            StructuredTool.from_function(
+                func=list_resource_groups_func,
+                name="list_resource_groups",
+                description="List all Azure resource groups in your subscription. Use this to discover available resource groups."
+            ),
+            StructuredTool.from_function(
+                func=list_vms_func,
+                name="list_vms",
+                description="List all Azure virtual machines. Optionally filter by resource group."
+            ),
+            StructuredTool.from_function(
+                func=get_vm_status_func,
+                name="get_vm_status",
+                description="Get the power state and status of a specific Azure VM. Shows if it's running, stopped, or deallocated."
+            ),
+            StructuredTool.from_function(
+                func=start_vm_func,
+                name="start_vm",
+                description="Start a stopped Azure virtual machine. VM will begin running and incur compute costs."
+            ),
+            StructuredTool.from_function(
+                func=stop_vm_func,
+                name="stop_vm",
+                description="Stop and deallocate an Azure VM to save costs. VM will not incur compute charges when deallocated."
+            ),
+            StructuredTool.from_function(
+                func=restart_vm_func,
+                name="restart_vm",
+                description="Restart an Azure virtual machine. Useful for applying updates or resolving issues."
+            ),
+            StructuredTool.from_function(
+                func=list_storage_accounts_func,
+                name="list_storage_accounts",
+                description="List all Azure storage accounts. Optionally filter by resource group."
+            ),
+            StructuredTool.from_function(
+                func=list_databases_azure_func,
+                name="list_databases_azure",
+                description="List all Azure SQL servers. Optionally filter by resource group. Different from Databricks databases."
+            ),
+            StructuredTool.from_function(
+                func=get_subscription_info_func,
+                name="get_subscription_info",
+                description="Get information about your Azure subscription including name, ID, and state."
+            ),
+            StructuredTool.from_function(
+                func=list_resources_func,
+                name="list_resources",
+                description="List all Azure resources in a resource group. Optionally filter by resource type (e.g., 'Microsoft.Compute/virtualMachines')."
+            ),
+            StructuredTool.from_function(
+                func=create_storage_account_func,
+                name="create_storage_account",
+                description="Create a new Azure storage account. Name must be globally unique, 3-24 lowercase letters/numbers. Default SKU is Standard_LRS (locally redundant). Use for storing data, blobs, files, etc."
             )
         ]
         
@@ -770,10 +918,13 @@ You have access to:
 - Google Maps: Search places, get basic directions
 - TomTom Maps (FREE): Real-time TRAFFIC data, traffic-aware routing, congestion levels, fuel consumption
 - Databricks: Execute SQL queries, run notebooks, manage clusters, create clusters, list tables/jobs, run data pipelines
+- Azure: Manage VMs (start/stop/restart), list resource groups, storage accounts, SQL servers, get subscription info
 
 IMPORTANT: For traffic-related queries, ALWAYS use TomTom tools (get_traffic_info, get_directions_with_traffic, calculate_distance_with_traffic) as they provide real-time traffic data, delays, and congestion levels.
 
-Be conversational and remember context. When combining services (like finding sports bars with traffic info, or querying soccer data from Databricks), use multiple tools together."""),
+IMPORTANT: For Azure SQL databases use 'list_databases_azure'. For Databricks databases use 'list_databases'.
+
+Be conversational and remember context. When combining services (like finding sports bars with traffic info, or managing Azure VMs and emailing status reports), use multiple tools together."""),
                 MessagesPlaceholder(variable_name="chat_history"),
                 ("human", "{input}"),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
@@ -870,7 +1021,7 @@ def clear_memory():
 
 @app.route('/health')
 def health():
-    soccer_ok = gmail_ok = maps_ok = tomtom_ok = databricks_ok = False
+    soccer_ok = gmail_ok = maps_ok = tomtom_ok = databricks_ok = azure_ok = False
 
     try:
         with httpx.Client(timeout=5.0) as client:
@@ -906,6 +1057,13 @@ def health():
     except:
         pass
 
+    try:
+        with httpx.Client(timeout=5.0) as client:
+            data = client.get(f"{MCP_AZURE_URL}/health").json()
+            azure_ok = data.get("status") == "healthy" or data.get("azure_auth") == "connected"
+    except:
+        pass
+
     return jsonify({
         "status": "healthy",
         "langchain_connected": LANGCHAIN_CONNECTED,
@@ -914,18 +1072,20 @@ def health():
         "gmail_ok": gmail_ok,
         "maps_ok": maps_ok,
         "tomtom_ok": tomtom_ok,
-        "databricks_ok": databricks_ok
+        "databricks_ok": databricks_ok,
+        "azure_ok": azure_ok
     })
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("🚀 Starting AI Assistant with LangChain Memory")
+    print("🚀 Starting ADDOF with LangChain Memory")
     print("=" * 60)
     print(f"📍 Soccer MCP:      {MCP_SOCCER_URL}")
     print(f"📍 Email MCP:       {MCP_GOOGLE_URL}")
     print(f"📍 Maps MCP:        {MCP_MAPS_URL}")
     print(f"📍 TomTom MCP:      {MCP_TOMTOM_URL} (FREE - Traffic)")
     print(f"📍 Databricks MCP:  {MCP_DATABRICKS_URL}")
+    print(f"📍 Azure MCP:       {MCP_AZURE_URL}")
     print(f"🌐 Web App:         http://localhost:5002")
     print()
     print("System Status:")
@@ -934,8 +1094,9 @@ if __name__ == '__main__':
     print()
     if LANGCHAIN_CONNECTED and AGENT_INITIALIZED:
         print("✨ MEMORY ENABLED - I'll remember your conversation!")
-        print(f"🛠️  26 tools available (Soccer, Email, Maps, TomTom, Databricks)")
+        print(f"🛠️  37 tools available (Soccer, Email, Maps, TomTom, Databricks, Azure)")
         print(f"🚗 TomTom: Real-time traffic, 75,000 FREE requests/month")
         print(f"📊 Databricks: Natural language to SQL, queries, notebooks, clusters, jobs")
+        print(f"☁️  Azure: Manage VMs, resource groups, storage accounts (create/list), SQL servers")
     print("=" * 60)
     app.run(debug=True, port=5006, use_reloader=False)

@@ -42,6 +42,7 @@ def stop_servers():
         ("Google Maps", 8083),
         ("TomTom", 8084),
         ("Databricks", 8085),
+        ("Azure", 8086),
     ]
 
     stopped_count = 0

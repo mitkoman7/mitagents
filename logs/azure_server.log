@@ -1,0 +1,30 @@
+INFO:     Started server process [35631]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8086 (Press CTRL+C to quit)
+============================================================
+☁️  Starting Azure MCP Server
+============================================================
+🌐 Server: http://localhost:8086
+📋 Tools: http://localhost:8086/tools
+❤️  Health: http://localhost:8086/health
+
+✅ Azure credentials configured
+📊 Subscription ID: 1fa44ca8...
+📁 Default Resource Group: ai
+============================================================
+INFO:     127.0.0.1:62729 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62744 - "GET /health HTTP/1.1" 200 OK
+☁️  Executing Azure tool: list_resource_groups
+📦 Arguments: {}
+INFO:     127.0.0.1:62749 - "POST /execute HTTP/1.1" 200 OK
+☁️  Executing Azure tool: list_resources
+📦 Arguments: {'resource_group': 'ai', 'resource_type': ''}
+INFO:     127.0.0.1:62755 - "POST /execute HTTP/1.1" 200 OK
+☁️  Executing Azure tool: create_storage_account
+📦 Arguments: {'storage_account_name': 'macunia', 'resource_group': 'ai', 'location': 'eastus', 'sku': 'Standard_LRS', 'kind': 'StorageV2'}
+INFO:     127.0.0.1:62763 - "POST /execute HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [35631]

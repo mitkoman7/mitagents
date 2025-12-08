@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADDOF Architecture - AI-Driven Data Operations Framework</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        .architecture {
+            margin-top: 40px;
+        }
+
+        .layer {
+            margin-bottom: 30px;
+        }
+
+        .layer-title {
+            font-size: 1.3em;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 4px solid #667eea;
+            font-weight: 600;
+        }
+
+        .component {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .component:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+
+        .component-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .icon {
+            font-size: 2em;
+        }
+
+        .component-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .port-badge {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-left: auto;
+        }
+
+        .component-description {
+            color: #7f8c8d;
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+
+        .tools-count {
+            background: #f8f9fa;
+            padding: 8px 15px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #495057;
+        }
+
+        .mcp-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .mcp-server {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .mcp-server:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .flow-diagram {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 30px;
+            margin-top: 30px;
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            gap: 15px;
+        }
+
+        .flow-number {
+            background: #667eea;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .flow-text {
+            flex: 1;
+            color: #2c3e50;
+            line-height: 1.5;
+        }
+
+        .arrow {
+            text-align: center;
+            color: #667eea;
+            font-size: 2em;
+            margin: 10px 0;
+        }
+
+        .tech-stack {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+        }
+
+        .tech-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .tech-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            backdrop-filter: blur(10px);
+        }
+
+        .legend {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .stats {
+                flex-direction: column;
+            }
+
+            .mcp-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 ADDOF Architecture</h1>
+        <div class="subtitle">AI-Driven Data Operations Framework</div>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-number">6</div>
+                <div class="stat-label">MCP Servers</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number">37</div>
+                <div class="stat-label">Total Tools</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number">1</div>
+                <div class="stat-label">LangChain Agent</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number">GPT-4</div>
+                <div class="stat-label">AI Model</div>
+            </div>
+        </div>
+
+        <div class="architecture">
+            <!-- User Interface Layer -->
+            <div class="layer">
+                <div class="layer-title">🌐 User Interface Layer</div>
+                <div class="component">
+                    <div class="component-header">
+                        <span class="icon">🖥️</span>
+                        <span class="component-name">Web Interface</span>
+                        <span class="port-badge">Port 5006</span>
+                    </div>
+                    <div class="component-description">
+                        Flask web application providing chat interface for user interactions
+                    </div>
+                </div>
+            </div>
+
+            <div class="arrow">↓</div>
+
+            <!-- Orchestration Layer -->
+            <div class="layer">
+                <div class="layer-title">🧠 AI Orchestration Layer</div>
+                <div class="component">
+                    <div class="component-header">
+                        <span class="icon">🔗</span>
+                        <span class="component-name">LangChain Agent</span>
+                    </div>
+                    <div class="component-description">
+                        Single intelligent agent powered by GPT-4 (Azure OpenAI) with access to all 37 tools across 6 services. Uses OpenAI function calling to automatically select the right tool based on user intent.
+                    </div>
+                    <div class="tools-count">⚙️ 37 Structured Tools | 💾 Conversation Memory | 🎯 Smart Tool Selection</div>
+                </div>
+            </div>
+
+            <div class="arrow">↓</div>
+
+            <!-- Routing Layer -->
+            <div class="layer">
+                <div class="layer-title">🔀 Request Routing Layer</div>
+                <div class="component">
+                    <div class="component-header">
+                        <span class="icon">📡</span>
+                        <span class="component-name">execute_tool_direct()</span>
+                    </div>
+                    <div class="component-description">
+                        HTTP request router that directs tool calls to the appropriate MCP server based on tool name. Handles tool name transformations (e.g., _tomtom suffix removal, list_databases_azure → list_databases).
+                    </div>
+                </div>
+            </div>
+
+            <div class="arrow">↓</div>
+
+            <!-- MCP Servers Layer -->
+            <div class="layer">
+                <div class="layer-title">🚀 MCP (Model Context Protocol) Servers</div>
+                <div class="mcp-grid">
+                    <div class="mcp-server">
+                        <div class="component-header">
+                            <span class="icon">⚽</span>
+                            <span class="component-name">Soccer</span>
+                            <span class="port-badge">8081</span>
+                        </div>
+                        <div class="component-description">
+                            Football/Soccer data from Football-Data.org API
+                        </div>
+                        <div class="tools-count">6 Tools: match results, standings, teams, players, competitions</div>
+                    </div>
+
+                    <div class="mcp-server">
+                        <div class="component-header">
+                            <span class="icon">📧</span>
+                            <span class="component-name">Gmail</span>
+                            <span class="port-badge">8082</span>
+                        </div>
+                        <div class="component-description">
+                            Email capabilities via Gmail SMTP
+                        </div>
+                        <div class="tools-count">3 Tools: send_email, send_email_with_data, email_me</div>
+                    </div>
+
+                    <div class="mcp-server">
+                        <div class="component-header">
+                            <span class="icon">🗺️</span>
+                            <span class="component-name">Google Maps</span>
+                            <span class="port-badge">8083</span>
+                        </div>
+                        <div class="component-description">
+                            Location services via Google Maps API
+                        </div>
+                        <div class="tools-count">5 Tools: search places, directions, distance, geocode, nearby</div>
+                    </div>
+
+                    <div class="mcp-server">
+                        <div class="component-header">
+                            <span class="icon">🚗</span>
+                            <span class="component-name">TomTom</span>
+                            <span class="port-badge">8084</span>
+                        </div>
+                        <div class="component-description">
+                            Traffic-aware routing and real-time traffic data
+                        </div>
+                        <div class="tools-count">5 Tools: search, routing, traffic flow, incidents, geocoding</div>
+                    </div>
+
+                    <div class="mcp-server">
+                        <div class="component-header">
+                            <span class="icon">📊</span>
+                            <span class="component-name">Databricks</span>
+                            <span class="port-badge">8085</span>
+                        </div>
+                        <div class="component-description">
+                            Data analytics with Unity Catalog (dbrmitko catalog)
+                        </div>
+                        <div class="tools-count">13 Tools: SQL execution, natural language queries, catalogs, schemas, tables, notebooks, clusters, jobs</div>
+                    </div>
+
+                    <div class="mcp-server">
+                        <div class="component-header">
+                            <span class="icon">☁️</span>
+                            <span class="component-name">Azure</span>
+                            <span class="port-badge">8086</span>
+                        </div>
+                        <div class="component-description">
+                            Azure cloud resource management via Service Principal
+                        </div>
+                        <div class="tools-count">11 Tools: VMs (list, status, start, stop, restart), resource groups, storage accounts, SQL servers, subscription info</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="arrow">↓</div>
+
+            <!-- External APIs Layer -->
+            <div class="layer">
+                <div class="layer-title">🌍 External APIs</div>
+                <div class="mcp-grid">
+                    <div class="component">
+                        <div class="component-header">
+                            <span class="icon">⚽</span>
+                            <span class="component-name">Football-Data.org</span>
+                        </div>
+                    </div>
+                    <div class="component">
+                        <div class="component-header">
+                            <span class="icon">📧</span>
+                            <span class="component-name">Gmail SMTP</span>
+                        </div>
+                    </div>
+                    <div class="component">
+                        <div class="component-header">
+                            <span class="icon">🗺️</span>
+                            <span class="component-name">Google Maps API</span>
+                        </div>
+                    </div>
+                    <div class="component">
+                        <div class="component-header">
+                            <span class="icon">🚗</span>
+                            <span class="component-name">TomTom API</span>
+                        </div>
+                    </div>
+                    <div class="component">
+                        <div class="component-header">
+                            <span class="icon">📊</span>
+                            <span class="component-name">Databricks API</span>
+                        </div>
+                    </div>
+                    <div class="component">
+                        <div class="component-header">
+                            <span class="icon">☁️</span>
+                            <span class="component-name">Azure ARM API</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Request Flow -->
+        <div class="flow-diagram">
+            <h2 style="color: #2c3e50; margin-bottom: 20px;">📋 Request Flow Example: "What's the status of my Azure VM?"</h2>
+
+            <div class="flow-step">
+                <div class="flow-number">1</div>
+                <div class="flow-text">User sends message via web interface → Flask /chat endpoint</div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-number">2</div>
+                <div class="flow-text">LangChain agent receives request with conversation history</div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-number">3</div>
+                <div class="flow-text">GPT-4 analyzes intent using function calling: "This is about Azure VM status"</div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-number">4</div>
+                <div class="flow-text">GPT-4 selects tool: get_vm_status from 37 available tools</div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-number">5</div>
+                <div class="flow-text">Agent calls: get_vm_status_func(vm_name="web-server-01")</div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-number">6</div>
+                <div class="flow-text">Function invokes: execute_tool_direct("get_vm_status", {"vm_name": "web-server-01"})</div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-number">7</div>
+                <div class="flow-text">Router checks tool name → matches azure_tools list → routes to MCP_AZURE_URL</div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-number">8</div>
+                <div class="flow-text">HTTP POST to http://localhost:8086/execute with tool_name and arguments</div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-number">9</div>
+                <div class="flow-text">Azure MCP server receives request → authenticates with Service Principal</div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-number">10</div>
+                <div class="flow-text">Azure MCP calls Azure Management API for VM instance view</div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-number">11</div>
+                <div class="flow-text">Azure API returns VM power state and status details</div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-number">12</div>
+                <div class="flow-text">Azure MCP formats JSON response → returns to execute_tool_direct()</div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-number">13</div>
+                <div class="flow-text">Result returns to LangChain agent</div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-number">14</div>
+                <div class="flow-text">GPT-4 formats natural language response: "The VM web-server-01 is currently running"</div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-number">15</div>
+                <div class="flow-text">Flask returns formatted response to user via web interface</div>
+            </div>
+        </div>
+
+        <!-- Tech Stack -->
+        <div class="tech-stack">
+            <h2 style="margin-bottom: 15px;">💻 Technology Stack</h2>
+            <div class="tech-list">
+                <div class="tech-badge">Flask (Web Framework)</div>
+                <div class="tech-badge">LangChain (AI Orchestration)</div>
+                <div class="tech-badge">GPT-4 (Azure OpenAI)</div>
+                <div class="tech-badge">FastAPI (MCP Servers)</div>
+                <div class="tech-badge">httpx (HTTP Client)</div>
+                <div class="tech-badge">Python 3.x</div>
+                <div class="tech-badge">Azure SDK</div>
+                <div class="tech-badge">Databricks SDK</div>
+                <div class="tech-badge">Google OAuth</div>
+                <div class="tech-badge">OpenAI Function Calling</div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <h3 style="color: #2c3e50; margin-bottom: 15px;">🔑 Architecture Patterns</h3>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                <div><strong>Single Agent Pattern:</strong> One LangChain agent orchestrates all 37 tools (not multiple agents)</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border: 2px solid #667eea;"></div>
+                <div><strong>Microservices:</strong> 6 independent MCP servers, each handling specific domain</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f8f9fa; border: 2px solid #e0e0e0;"></div>
+                <div><strong>HTTP Communication:</strong> REST API calls between Flask and MCP servers</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
+                <div><strong>AI-Driven Selection:</strong> GPT-4 automatically chooses the right tool via OpenAI function calling</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
