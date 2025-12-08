@@ -1,4 +1,4 @@
-INFO:     Started server process [35610]
+INFO:     Started server process [72946]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8083 (Press CTRL+C to quit)
@@ -8,9 +8,5 @@ INFO:     Uvicorn running on http://0.0.0.0:8083 (Press CTRL+C to quit)
 API Key: ✅ Configured
 Port: 8083
 ============================================================
-INFO:     127.0.0.1:62723 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:62738 - "GET /health HTTP/1.1" 200 OK
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [35610]
+INFO:     127.0.0.1:64190 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64210 - "GET /health HTTP/1.1" 200 OK

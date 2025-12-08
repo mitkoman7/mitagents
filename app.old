@@ -1,0 +1,299 @@
+from flask import Flask, render_template_string, request, jsonify
+import httpx
+from openai import AzureOpenAI
+import os
+import json
+from dotenv import load_dotenv
+
+load_dotenv()
+
+app = Flask(__name__)
+
+# Azure OpenAI Configuration
+client = AzureOpenAI(
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+    api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview"),
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
+)
+
+MCP_SERVER_URL = os.getenv("MCP_SERVER_URL", "http://localhost:8081")
+
+# HTML Template (same as before - keeping it short here)
+HTML_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Soccer Results AI Assistant</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; }
+        .chat-box { border: 1px solid #ddd; padding: 20px; height: 400px; overflow-y: auto; margin-bottom: 20px; border-radius: 5px; background: #f9f9f9; }
+        .message { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .user-message { background: #e3f2fd; text-align: right; }
+        .assistant-message { background: #f1f8e9; }
+        .error-message { background: #ffebee; color: #c62828; }
+        .input-area { display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        button { padding: 12px 25px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #5568d3; }
+        .examples { margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 5px; }
+        .examples h3 { margin-top: 0; }
+        .example-query { padding: 8px; margin: 5px 0; background: white; border-radius: 3px; cursor: pointer; border: 1px solid #ddd; }
+        .example-query:hover { background: #e3f2fd; }
+        .status { padding: 10px; margin-bottom: 10px; border-radius: 5px; font-size: 12px; }
+        .status.connected { background: #e8f5e9; color: #2e7d32; }
+        .status.disconnected { background: #ffebee; color: #c62828; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚽ Soccer Results AI Assistant</h1>
+        <div class="status" id="status">Checking connection...</div>
+        <div class="chat-box" id="chatBox"></div>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Ask about soccer results..." onkeypress="if(event.key==='Enter') sendMessage()">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+        <div class="examples">
+            <h3>Try these examples:</h3>
+            <div class="example-query" onclick="setQuery(this.innerText)">What were the latest Premier League results?</div>
+            <div class="example-query" onclick="setQuery(this.innerText)">Show me the current Premier League standings</div>
+            <div class="example-query" onclick="setQuery(this.innerText)">What matches are scheduled for today?</div>
+        </div>
+    </div>
+    <script>
+        let conversationHistory = [];
+        window.onload = async function() {
+            try {
+                const response = await fetch('/check_connection');
+                const data = await response.json();
+                const statusDiv = document.getElementById('status');
+                if (data.connected) {
+                    statusDiv.className = 'status connected';
+                    statusDiv.textContent = '✓ Connected to MCP Server';
+                } else {
+                    statusDiv.className = 'status disconnected';
+                    statusDiv.textContent = '✗ MCP Server not connected';
+                }
+            } catch (error) {
+                document.getElementById('status').className = 'status disconnected';
+                document.getElementById('status').textContent = '✗ Error checking connection';
+            }
+        };
+        function setQuery(text) { document.getElementById('userInput').value = text; }
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            if (!message) return;
+            addMessage(message, 'user');
+            input.value = '';
+            const loadingId = addMessage('Thinking...', 'assistant', true);
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ message: message, history: conversationHistory })
+                });
+                const data = await response.json();
+                document.getElementById(loadingId).remove();
+                if (data.error) {
+                    addMessage('Error: ' + data.error, 'error');
+                } else {
+                    addMessage(data.response, 'assistant');
+                    conversationHistory = data.history;
+                }
+            } catch (error) {
+                document.getElementById(loadingId).remove();
+                addMessage('Error: ' + error.message, 'error');
+            }
+        }
+        function addMessage(text, sender, isLoading = false) {
+            const chatBox = document.getElementById('chatBox');
+            const messageDiv = document.createElement('div');
+            const id = 'msg-' + Date.now();
+            messageDiv.id = id;
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.textContent = text;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            return id;
+        }
+    </script>
+</body>
+</html>
+"""
+
+def get_mcp_tools():
+    """Get available tools from MCP server"""
+    try:
+        with httpx.Client(timeout=10.0) as http_client:
+            response = http_client.get(f"{MCP_SERVER_URL}/tools")
+            return response.json()
+    except Exception as e:
+        print(f"Error getting MCP tools: {e}")
+        return None
+
+def execute_mcp_tool(tool_name, arguments):
+    """Execute a tool on MCP server"""
+    try:
+        with httpx.Client(timeout=30.0) as http_client:
+            response = http_client.post(
+                f"{MCP_SERVER_URL}/execute",
+                json={"tool_name": tool_name, "arguments": arguments}
+            )
+            return response.json()["result"]
+    except Exception as e:
+        print(f"Error executing MCP tool: {e}")
+        return json.dumps({"error": str(e)})
+
+def chat_with_openai(user_message, conversation_history):
+    """Chat with Azure OpenAI using MCP tools"""
+    try:
+        tools_data = get_mcp_tools()
+        if not tools_data:
+            return "Error: Cannot connect to MCP server.", []
+        
+        tools = [{
+            "type": "function",
+            "function": {
+                "name": tool["name"],
+                "description": tool["description"],
+                "parameters": tool["inputSchema"]
+            }
+        } for tool in tools_data]
+        
+        # Clean history
+        messages = []
+        for msg in conversation_history:
+            if isinstance(msg, dict):
+                clean_msg = {"role": msg.get("role")}
+                if "content" in msg and msg["content"]:
+                    clean_msg["content"] = msg["content"]
+                if msg.get("role") == "tool":
+                    clean_msg["tool_call_id"] = msg.get("tool_call_id")
+                    clean_msg["name"] = msg.get("name")
+                messages.append(clean_msg)
+        
+        messages.append({"role": "user", "content": user_message})
+        
+        response = client.chat.completions.create(
+            model=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
+            messages=messages,
+            tools=tools,
+            tool_choice="auto"
+        )
+        
+        max_iterations = 5
+        iteration = 0
+        
+        while response.choices[0].finish_reason == "tool_calls" and iteration < max_iterations:
+            iteration += 1
+            assistant_message = response.choices[0].message
+            
+            # Serialize tool_calls
+            tool_calls_serializable = []
+            if assistant_message.tool_calls:
+                for tc in assistant_message.tool_calls:
+                    tool_calls_serializable.append({
+                        "id": tc.id,
+                        "type": tc.type,
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments
+                        }
+                    })
+            
+            messages.append({
+                "role": "assistant",
+                "content": assistant_message.content,
+                "tool_calls": tool_calls_serializable
+            })
+            
+            for tool_call in assistant_message.tool_calls:
+                function_name = tool_call.function.name
+                function_args = json.loads(tool_call.function.arguments)
+                print(f"🔧 Executing: {function_name} with args: {function_args}")
+                result = execute_mcp_tool(function_name, function_args)
+                
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "name": function_name,
+                    "content": result
+                })
+            
+            response = client.chat.completions.create(
+                model=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
+                messages=messages,
+                tools=tools,
+                tool_choice="auto"
+            )
+        
+        final_content = response.choices[0].message.content
+        messages.append({"role": "assistant", "content": final_content})
+        
+        # Return clean history
+        serializable_history = []
+        for msg in messages:
+            clean_msg = {"role": msg.get("role"), "content": msg.get("content")}
+            if msg.get("role") == "tool":
+                clean_msg["tool_call_id"] = msg.get("tool_call_id")
+                clean_msg["name"] = msg.get("name")
+            serializable_history.append(clean_msg)
+        
+        return final_content, serializable_history
+        
+    except Exception as e:
+        print(f"Error in chat_with_openai: {e}")
+        import traceback
+        traceback.print_exc()
+        return f"Error: {str(e)}", []
+
+@app.route('/')
+def index():
+    return render_template_string(HTML_TEMPLATE)
+
+@app.route('/check_connection')
+def check_connection():
+    try:
+        with httpx.Client(timeout=5.0) as http_client:
+            response = http_client.get(f"{MCP_SERVER_URL}/health")
+            if response.status_code == 200:
+                return jsonify({"connected": True})
+    except:
+        pass
+    return jsonify({"connected": False})
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    try:
+        data = request.json
+        user_message = data.get('message', '')
+        history = data.get('history', [])
+        
+        response_text, updated_history = chat_with_openai(user_message, history)
+        
+        return jsonify({
+            'response': response_text,
+            'history': updated_history
+        })
+    except Exception as e:
+        print(f"Error in chat endpoint: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'error': str(e),
+            'response': f"An error occurred: {str(e)}",
+            'history': []
+        })
+
+@app.route('/health')
+def health():
+    return jsonify({"status": "healthy"})
+
+if __name__ == '__main__':
+    print("🚀 Starting Soccer Results AI Assistant...")
+    print(f"📍 MCP Server: {MCP_SERVER_URL}")
+    print(f"🌐 Web App: http://localhost:5000")
+    app.run(debug=True, port=5000, use_reloader=False)
