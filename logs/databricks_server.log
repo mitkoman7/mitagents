@@ -1,4 +1,4 @@
-INFO:     Started server process [72960]
+INFO:     Started server process [79483]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8085 (Press CTRL+C to quit)
@@ -10,85 +10,11 @@ Token: ✅ Configured
 Cluster: 1206-130738-qkcvqjgg
 Port: 8085
 ============================================================
-INFO:     127.0.0.1:64194 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:64216 - "GET /health HTTP/1.1" 200 OK
-📊 Executing: list_clusters
-📦 Arguments: {}
-🖥️  Listing clusters...
-✅ Found 2 clusters
-✅ Execution complete
-INFO:     127.0.0.1:64225 - "POST /execute HTTP/1.1" 200 OK
-📊 Executing: list_databases
-📦 Arguments: {'catalog': 'hive_metastore'}
-📋 Listing databases in hive_metastore
-📊 Executing SQL query...
-Query: SHOW DATABASES...
-❌ Error: Client error '400 Bad Request' for url 'https://adb-1960473997986044.4.azuredatabricks.net/api/2.0/sql/statements'
-For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
-⚠️  SQL warehouse not available, trying cluster for query...
-✅ Found 2 databases
-✅ Execution complete
-INFO:     127.0.0.1:64665 - "POST /execute HTTP/1.1" 200 OK
-📊 Executing: list_tables
-📦 Arguments: {'catalog': 'hive_metastore', 'schema': 'default'}
-📋 Listing tables in hive_metastore.default
-📊 Executing SQL query...
-Query: SHOW TABLES IN default...
-❌ Error: Client error '400 Bad Request' for url 'https://adb-1960473997986044.4.azuredatabricks.net/api/2.0/sql/statements'
-For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
-⚠️  SQL warehouse not available, trying cluster for query...
-✅ Found 1 tables
-✅ Execution complete
-INFO:     127.0.0.1:64673 - "POST /execute HTTP/1.1" 200 OK
-📊 Executing: natural_language_query
-📦 Arguments: {'question': 'show attendance for whole dataset', 'table_name': 'hr_attendance_dummy'}
-🤖 Translating natural language to SQL...
-Question: show attendance for whole dataset
-📋 Getting schema for hive_metastore.default.hr_attendance_dummy
-📊 Executing SQL query...
-Query: DESCRIBE TABLE default.hr_attendance_dummy...
-❌ Error: Client error '400 Bad Request' for url 'https://adb-1960473997986044.4.azuredatabricks.net/api/2.0/sql/statements'
-For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
-⚠️  SQL warehouse not available, trying cluster for query...
-✅ Found 5 columns
-📝 Generated SQL: SELECT * FROM hr_attendance_dummy LIMIT 100
-📊 Executing SQL query...
-Query: SELECT * FROM hr_attendance_dummy LIMIT 100...
-❌ Error: Client error '400 Bad Request' for url 'https://adb-1960473997986044.4.azuredatabricks.net/api/2.0/sql/statements'
-For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
-⚠️  SQL warehouse not available, trying cluster for query...
-✅ Execution complete
-INFO:     127.0.0.1:64679 - "POST /execute HTTP/1.1" 200 OK
-📊 Executing: natural_language_query
-📦 Arguments: {'question': 'Show attendance aggregated by months', 'table_name': 'hr_attendance_dummy'}
-🤖 Translating natural language to SQL...
-Question: Show attendance aggregated by months
-📋 Getting schema for hive_metastore.default.hr_attendance_dummy
-📊 Executing SQL query...
-Query: DESCRIBE TABLE default.hr_attendance_dummy...
-❌ Error: Client error '400 Bad Request' for url 'https://adb-1960473997986044.4.azuredatabricks.net/api/2.0/sql/statements'
-For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
-⚠️  SQL warehouse not available, trying cluster for query...
-✅ Found 5 columns
-📝 Generated SQL: SELECT
-    DATE_TRUNC('month', date) as month,
-    department,
-    status,
-    COUNT(*) as count,
-    COUNT(DISTINCT employee_id) as unique_employees
-FROM hr_attendance_dummy
-WHERE date >= DATE_SUB(CURRENT_DATE(), 90)
-GROUP BY DATE_TRUNC('month', date), department, status
-ORDER BY month DESC, department, status
-📊 Executing SQL query...
-Query: SELECT
-    DATE_TRUNC('month', date) as month,
-    department,
-    status,
-    COUNT(*) as count,
-  ...
-❌ Error: Client error '400 Bad Request' for url 'https://adb-1960473997986044.4.azuredatabricks.net/api/2.0/sql/statements'
-For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
-⚠️  SQL warehouse not available, trying cluster for query...
-✅ Execution complete
-INFO:     127.0.0.1:64689 - "POST /execute HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60369 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60384 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60887 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61399 - "GET /health HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [79483]

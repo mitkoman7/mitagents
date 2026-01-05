@@ -59,28 +59,37 @@ HTML_TEMPLATE = """
 <head>
     <title>ADDOF</title>
     <style>
-        body { 
-            font-family: 'Segoe UI', Arial, sans-serif; 
-            max-width: 1000px; 
-            margin: 50px auto; 
-            padding: 20px; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+        * {
+            box-sizing: border-box;
         }
-        .container { 
-            background: white; 
-            padding: 30px; 
-            border-radius: 15px; 
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2); 
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
         }
-        h1 { 
-            color: #333; 
-            text-align: center; 
-            margin-bottom: 10px;
+        .container {
+            background: white;
+            padding: 15px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: none;
+            max-width: 100%;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin: 0 0 8px 0;
+            font-size: 1.5em;
         }
         .subtitle {
             text-align: center;
             color: #666;
-            margin-bottom: 20px;
+            margin: 0 0 10px 0;
+            font-size: 0.9em;
         }
         .memory-badge {
             display: inline-block;
@@ -94,12 +103,13 @@ HTML_TEMPLATE = """
         }
         .memory-info {
             background: #e3f2fd;
-            padding: 12px;
+            padding: 8px 12px;
             border-radius: 8px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-shrink: 0;
         }
         .memory-info-text {
             color: #1976d2;
@@ -119,14 +129,18 @@ HTML_TEMPLATE = """
         }
         .status-section {
             background: #f8f9fa;
-            padding: 15px;
+            padding: 10px;
             border-radius: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+            max-height: 150px;
+            overflow-y: auto;
         }
         .status-item {
             display: flex;
             justify-content: space-between;
-            padding: 8px 0;
+            padding: 4px 0;
+            font-size: 0.85em;
         }
         .status-dot {
             width: 10px;
@@ -137,14 +151,15 @@ HTML_TEMPLATE = """
         }
         .status-dot.connected { background: #28a745; }
         .status-dot.disconnected { background: #dc3545; }
-        .chat-box { 
-            border: 1px solid #ddd; 
-            padding: 20px; 
-            height: 400px; 
-            overflow-y: auto; 
-            margin-bottom: 20px; 
-            border-radius: 8px; 
-            background: #fafafa; 
+        .chat-box {
+            border: 1px solid #ddd;
+            padding: 15px;
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            background: #fafafa;
+            min-height: 0;
         }
         .message { 
             margin: 12px 0; 
@@ -165,74 +180,59 @@ HTML_TEMPLATE = """
             margin-right: 20%;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-        .input-area { 
-            display: flex; 
-            gap: 10px; 
+        .input-area {
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0;
+            padding-bottom: 5px;
         }
-        input { 
-            flex: 1; 
-            padding: 14px; 
-            border: 2px solid #e0e0e0; 
-            border-radius: 8px; 
-            font-size: 14px; 
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            min-width: 0;
         }
         input:focus {
             outline: none;
             border-color: #667eea;
         }
-        button { 
-            padding: 14px 30px; 
+        button {
+            padding: 12px 24px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; 
-            border: none; 
-            border-radius: 8px; 
-            cursor: pointer; 
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
             font-weight: 600;
+            white-space: nowrap;
         }
         button:hover {
             opacity: 0.9;
         }
-        .examples {
-            margin-top: 20px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 1.2em;
+            }
+            .subtitle {
+                font-size: 0.8em;
+            }
+            .status-item {
+                font-size: 0.75em;
+            }
+            input {
+                font-size: 12px;
+                padding: 10px;
+            }
+            button {
+                padding: 10px 20px;
+            }
         }
-        .examples h3 {
-            margin-top: 0;
-            color: #333;
-        }
-        .example-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        .example-query { 
-            padding: 10px; 
-            background: white; 
-            border-radius: 5px; 
-            cursor: pointer; 
-            border: 1px solid #ddd;
-            font-size: 13px;
-            transition: all 0.2s;
-        }
-        .example-query:hover { 
-            background: #e3f2fd;
-            border-color: #667eea;
-            transform: translateY(-2px);
-        }
-        .service-tag {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 3px;
-            font-size: 11px;
-            font-weight: 600;
-            margin-right: 5px;
-        }
-        .tag-gmail { background: #ea4335; color: white; }
-        .tag-soccer { background: #fbbc04; color: white; }
-        .tag-databricks { background: #ff3621; color: white; }
-        .tag-azure { background: #0078d4; color: white; }
     </style>
 </head>
 <body>
@@ -281,60 +281,6 @@ HTML_TEMPLATE = """
         <div class="input-area">
             <input type="text" id="userInput" placeholder="Ask me anything (I'll remember!)..." onkeypress="if(event.key==='Enter') sendMessage()">
             <button onclick="sendMessage()">Send</button>
-        </div>
-        
-        <div class="examples">
-            <h3>💡 Try these (I'll remember context!):</h3>
-            <div class="example-grid">
-                <div class="example-query" onclick="setQuery(this.textContent)">
-                    <span class="service-tag tag-soccer">⚽</span>
-                    Latest Premier League results?
-                </div>
-                <div class="example-query" onclick="setQuery(this.textContent)">
-                    Traffic to Times Square right now?
-                </div>
-                <div class="example-query" onclick="setQuery(this.textContent)">
-                    <span class="service-tag tag-soccer">⚽</span>
-                    Show me Liverpool's matches
-                </div>
-                <div class="example-query" onclick="setQuery(this.textContent)">
-                    Find pizza restaurants near Central Park
-                </div>
-                <div class="example-query" onclick="setQuery(this.textContent)">
-                    How long to drive to JFK Airport?
-                </div>
-                <div class="example-query" onclick="setQuery(this.textContent)">
-                    Then: "Email me those directions"
-                </div>
-                <div class="example-query" onclick="setQuery(this.textContent)">
-                    <span class="service-tag tag-databricks">📊</span>
-                    Show me Databricks databases
-                </div>
-                <div class="example-query" onclick="setQuery(this.textContent)">
-                    <span class="service-tag tag-databricks">📊</span>
-                    List tables in default database
-                </div>
-                <div class="example-query" onclick="setQuery(this.textContent)">
-                    <span class="service-tag tag-databricks">📊</span>
-                    Create a cluster named test-cluster
-                </div>
-                <div class="example-query" onclick="setQuery(this.textContent)">
-                    <span class="service-tag tag-databricks">📊</span>
-                    List all my Databricks clusters
-                </div>
-                <div class="example-query" onclick="setQuery(this.textContent)">
-                    <span class="service-tag tag-azure">☁️</span>
-                    List my Azure resource groups
-                </div>
-                <div class="example-query" onclick="setQuery(this.textContent)">
-                    <span class="service-tag tag-azure">☁️</span>
-                    What VMs do I have?
-                </div>
-                <div class="example-query" onclick="setQuery(this.textContent)">
-                    <span class="service-tag tag-azure">☁️</span>
-                    Stop my dev-vm to save costs
-                </div>
-            </div>
         </div>
     </div>
     <script>

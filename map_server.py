@@ -205,27 +205,36 @@ async def execute_tool(request: ToolRequest):
                     "note": "Try one of the teams listed above"
                 }, indent=2)}
             
-            # Get team matches
-            data = await fetch_soccer_data(f"teams/{team_id}/matches?status=FINISHED&limit=10")
-            
+            # Get team matches - fetch all matches for current season (season has ~60 matches)
+            data = await fetch_soccer_data(f"teams/{team_id}/matches?limit=100")
+
             if "error" in data:
                 return {"result": json.dumps({"error": data["error"]}, indent=2)}
-            
+
             matches = data.get("matches", [])
-            
+
+            # Filter to only finished matches from current season (2025-2026) and sort by date descending
+            current_season_start = "2025-08-01"
+            finished_matches = [
+                m for m in matches
+                if m.get("status") == "FINISHED" and m.get("utcDate", "")[:10] >= current_season_start
+            ]
+            finished_matches.sort(key=lambda x: x.get("utcDate", ""), reverse=True)
+
             results = []
-            for match in matches[:5]:  # Last 5 matches
+            for match in finished_matches:  # All finished matches from current season
                 home_team = match.get("homeTeam", {}).get("name", "Unknown")
                 away_team = match.get("awayTeam", {}).get("name", "Unknown")
                 home_score = match.get('score', {}).get('fullTime', {}).get('home', '?')
                 away_score = match.get('score', {}).get('fullTime', {}).get('away', '?')
-                
+
                 results.append({
                     "date": match.get("utcDate", "")[:10],
                     "home_team": home_team,
                     "away_team": away_team,
                     "score": f"{home_score}-{away_score}",
-                    "competition": match.get("competition", {}).get("name", "Unknown")
+                    "competition": match.get("competition", {}).get("name", "Unknown"),
+                    "status": match.get("status", "Unknown")
                 })
             
             return {"result": json.dumps({
