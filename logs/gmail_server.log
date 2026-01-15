@@ -1,6 +1,6 @@
 /Users/dimitargrigorov/soccer/venv/lib/python3.9/site-packages/google/api_core/_python_version_support.py:237: FutureWarning: You are using a non-supported Python version (3.9.6). Google will not post any further updates to google.api_core supporting this Python version. Please upgrade to the latest Python version, or at least Python 3.10, and then update google.api_core.
   warnings.warn(message, FutureWarning)
-INFO:     Started server process [79473]
+INFO:     Started server process [18092]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8082 (Press CTRL+C to quit)
@@ -10,11 +10,9 @@ An error occurred: module 'importlib.metadata' has no attribute 'packages_distri
 
 ✅ Gmail configured: mitkoman@gmail.com
 
-INFO:     127.0.0.1:60364 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60379 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60882 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61394 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58797 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58813 - "GET /health HTTP/1.1" 200 OK
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [79473]
+INFO:     Finished server process [18092]

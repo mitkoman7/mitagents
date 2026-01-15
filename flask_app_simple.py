@@ -28,6 +28,7 @@ MCP_MAPS_URL = os.getenv("MCP_MAPS_URL", "http://localhost:8083")
 MCP_TOMTOM_URL = os.getenv("MCP_TOMTOM_URL", "http://localhost:8084")
 MCP_DATABRICKS_URL = os.getenv("MCP_DATABRICKS_URL", "http://localhost:8085")
 MCP_AZURE_URL = os.getenv("MCP_AZURE_URL", "http://localhost:8086")
+MCP_SOCCER_ANALYZER_URL = os.getenv("MCP_SOCCER_ANALYZER_URL", "http://localhost:8087")
 
 # Initialize LangChain with Memory
 LANGCHAIN_CONNECTED = False
@@ -414,6 +415,7 @@ def execute_tool_direct(tool_name, arguments):
     tomtom_tools = ["search_places_tomtom", "get_directions_tomtom", "calculate_distance_tomtom", "get_traffic_info", "nearby_search_tomtom"]
     databricks_tools = ["natural_language_query", "execute_sql", "list_databases", "list_tables", "get_table_schema", "run_notebook", "list_clusters", "get_cluster_status", "start_cluster", "list_jobs", "run_job", "get_job_run_status", "create_cluster"]
     azure_tools = ["list_resource_groups", "list_vms", "get_vm_status", "start_vm", "stop_vm", "restart_vm", "list_storage_accounts", "list_databases_azure", "get_subscription_info", "list_resources", "create_storage_account"]
+    soccer_analyzer_tools = ["predict_match", "analyze_team_form", "head_to_head", "get_team_stats", "league_predictions", "goal_probability"]
 
     if tool_name in google_tools:
         server_url = MCP_GOOGLE_URL
@@ -430,6 +432,8 @@ def execute_tool_direct(tool_name, arguments):
         server_url = MCP_DATABRICKS_URL
     elif tool_name in maps_tools:
         server_url = MCP_MAPS_URL
+    elif tool_name in soccer_analyzer_tools:
+        server_url = MCP_SOCCER_ANALYZER_URL
     else:
         server_url = MCP_SOCCER_URL
     
@@ -662,6 +666,31 @@ if LANGCHAIN_CONNECTED:
                 "kind": kind
             })
 
+        # Soccer Analyzer tools
+        def predict_match_func(home_team: str, away_team: str):
+            """Predict match outcome between two teams"""
+            return execute_tool_direct("predict_match", {"home_team": home_team, "away_team": away_team})
+
+        def analyze_team_form_func(team_name: str):
+            """Analyze a team's recent form"""
+            return execute_tool_direct("analyze_team_form", {"team_name": team_name})
+
+        def head_to_head_func(team1: str, team2: str):
+            """Get head-to-head statistics between two teams"""
+            return execute_tool_direct("head_to_head", {"team1": team1, "team2": team2})
+
+        def get_team_stats_func(team_name: str):
+            """Get detailed statistics for a team"""
+            return execute_tool_direct("get_team_stats", {"team_name": team_name})
+
+        def league_predictions_func(league: str = "PL"):
+            """Get predictions for upcoming league matches"""
+            return execute_tool_direct("league_predictions", {"league": league})
+
+        def goal_probability_func(home_team: str, away_team: str):
+            """Calculate goal probabilities for a match"""
+            return execute_tool_direct("goal_probability", {"home_team": home_team, "away_team": away_team})
+
         # Create StructuredTools
         tools = [
             StructuredTool.from_function(
@@ -848,6 +877,37 @@ if LANGCHAIN_CONNECTED:
                 func=create_storage_account_func,
                 name="create_storage_account",
                 description="Create a new Azure storage account. Name must be globally unique, 3-24 lowercase letters/numbers. Default SKU is Standard_LRS (locally redundant). Use for storing data, blobs, files, etc."
+            ),
+            # Soccer Analyzer tools
+            StructuredTool.from_function(
+                func=predict_match_func,
+                name="predict_match",
+                description="Predict the outcome of an upcoming match between two teams. Provides win probabilities, predicted score, and confidence level based on recent form analysis. Use team names like 'Manchester United', 'Liverpool', 'Arsenal'."
+            ),
+            StructuredTool.from_function(
+                func=analyze_team_form_func,
+                name="analyze_team_form",
+                description="Analyze a team's recent form including wins, losses, goals, trend (improving/declining/stable), and ratings. Great for understanding a team's current performance."
+            ),
+            StructuredTool.from_function(
+                func=head_to_head_func,
+                name="head_to_head",
+                description="Get head-to-head statistics between two teams including historical wins, draws, losses, and recent meetings."
+            ),
+            StructuredTool.from_function(
+                func=get_team_stats_func,
+                name="get_team_stats",
+                description="Get detailed statistics for a team including home/away record, clean sheets percentage, goals scored/conceded, and both-teams-to-score (BTTS) percentage."
+            ),
+            StructuredTool.from_function(
+                func=league_predictions_func,
+                name="league_predictions",
+                description="Get predictions for upcoming matches in a league. Use league codes: PL (Premier League), PD (La Liga), BL1 (Bundesliga), SA (Serie A), FL1 (Ligue 1)."
+            ),
+            StructuredTool.from_function(
+                func=goal_probability_func,
+                name="goal_probability",
+                description="Calculate goal probabilities for a match including expected goals, over/under probabilities (over 1.5, 2.5, 3.5 goals), and both-teams-to-score probability."
             )
         ]
         
@@ -860,11 +920,14 @@ When users refer to previous information (like "those results", "that team", "se
 
 You have access to:
 - Soccer data: Match results, team info, league standings
+- Soccer Analyzer: Match predictions, team form analysis, head-to-head stats, goal probabilities
 - Email: Send to yourself (mitkoman@gmail.com) or to any email address
 - Google Maps: Search places, get basic directions
 - TomTom Maps (FREE): Real-time TRAFFIC data, traffic-aware routing, congestion levels, fuel consumption
 - Databricks: Execute SQL queries, run notebooks, manage clusters, create clusters, list tables/jobs, run data pipelines
 - Azure: Manage VMs (start/stop/restart), list resource groups, storage accounts, SQL servers, get subscription info
+
+IMPORTANT: For match predictions and analysis, use Soccer Analyzer tools: predict_match, analyze_team_form, head_to_head, get_team_stats, goal_probability.
 
 IMPORTANT: For traffic-related queries, ALWAYS use TomTom tools (get_traffic_info, get_directions_with_traffic, calculate_distance_with_traffic) as they provide real-time traffic data, delays, and congestion levels.
 

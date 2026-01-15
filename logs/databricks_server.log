@@ -1,4 +1,4 @@
-INFO:     Started server process [79483]
+INFO:     Started server process [18103]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8085 (Press CTRL+C to quit)
@@ -10,11 +10,9 @@ Token: ✅ Configured
 Cluster: 1206-130738-qkcvqjgg
 Port: 8085
 ============================================================
-INFO:     127.0.0.1:60369 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60384 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60887 - "GET /health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61399 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58802 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58819 - "GET /health HTTP/1.1" 200 OK
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [79483]
+INFO:     Finished server process [18103]

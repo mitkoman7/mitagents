@@ -19,6 +19,7 @@ SERVERS = [
     {"name": "TomTom", "file": "tomtom_mcp_server.py", "port": 8084, "emoji": "🚗"},
     {"name": "Databricks", "file": "databricks_mcp_server.py", "port": 8085, "emoji": "📊"},
     {"name": "Azure", "file": "azure_mcp_server.py", "port": 8086, "emoji": "☁️"},
+    {"name": "Soccer Analyzer", "file": "soccer_analyzer_mcp_server.py", "port": 8087, "emoji": "🔮"},
 ]
 
 processes = []

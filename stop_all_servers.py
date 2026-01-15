@@ -43,6 +43,7 @@ def stop_servers():
         ("TomTom", 8084),
         ("Databricks", 8085),
         ("Azure", 8086),
+        ("Soccer Analyzer", 8087),
     ]
 
     stopped_count = 0
