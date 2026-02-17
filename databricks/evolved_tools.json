@@ -1,0 +1,491 @@
+{
+  "tools": {
+    "cluster_create": {
+      "name": "cluster_create",
+      "description": "Create a new Databricks cluster",
+      "api_path": "/api/2.0/clusters/create",
+      "api_method": "POST",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "cluster_name": {
+            "type": "string",
+            "description": "Name for the new cluster"
+          },
+          "spark_version": {
+            "type": "string",
+            "description": "Spark version (e.g., '13.3.x-scala2.12')",
+            "default": "13.3.x-scala2.12"
+          },
+          "node_type_id": {
+            "type": "string",
+            "description": "Node type (e.g., 'Standard_DS3_v2')",
+            "default": "Standard_DS3_v2"
+          },
+          "num_workers": {
+            "type": "integer",
+            "description": "Number of worker nodes",
+            "default": 1
+          }
+        },
+        "required": [
+          "cluster_name"
+        ]
+      },
+      "auto_generated": true
+    },
+    "cluster_edit": {
+      "name": "cluster_edit",
+      "description": "Edit an existing cluster configuration",
+      "api_path": "/api/2.0/clusters/edit",
+      "api_method": "POST",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "auto_generated": true
+    },
+    "cluster_resize": {
+      "name": "cluster_resize",
+      "description": "Resize a cluster",
+      "api_path": "/api/2.0/clusters/resize",
+      "api_method": "POST",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "auto_generated": true
+    },
+    "cluster_restart": {
+      "name": "cluster_restart",
+      "description": "Restart a cluster",
+      "api_path": "/api/2.0/clusters/restart",
+      "api_method": "POST",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "cluster_id": {
+            "type": "string",
+            "description": "Cluster ID to restart"
+          }
+        },
+        "required": [
+          "cluster_id"
+        ]
+      },
+      "auto_generated": true
+    },
+    "cluster_permanent_delete": {
+      "name": "cluster_permanent_delete",
+      "description": "Permanently delete a cluster",
+      "api_path": "/api/2.0/clusters/permanent-delete",
+      "api_method": "POST",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "auto_generated": true
+    },
+    "cluster_list_node_types": {
+      "name": "cluster_list_node_types",
+      "description": "List available node types for clusters",
+      "api_path": "/api/2.0/clusters/list-node-types",
+      "api_method": "GET",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "auto_generated": true
+    },
+    "cluster_spark_versions": {
+      "name": "cluster_spark_versions",
+      "description": "List available Spark versions",
+      "api_path": "/api/2.0/clusters/spark-versions",
+      "api_method": "GET",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "auto_generated": true
+    },
+    "workspace_import": {
+      "name": "workspace_import",
+      "description": "Import/create a notebook. Use format=SOURCE and language=PYTHON/SQL/SCALA/R",
+      "api_path": "/api/2.0/workspace/import",
+      "api_method": "POST",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Workspace path for the notebook (e.g., /Users/user@email.com/notebook_name)"
+          },
+          "language": {
+            "type": "string",
+            "description": "Language: PYTHON, SQL, SCALA, or R",
+            "default": "PYTHON"
+          },
+          "content": {
+            "type": "string",
+            "description": "Base64 encoded notebook content (optional, empty for new notebook)"
+          },
+          "format": {
+            "type": "string",
+            "description": "Format: SOURCE, HTML, JUPYTER, DBC",
+            "default": "SOURCE"
+          },
+          "overwrite": {
+            "type": "boolean",
+            "description": "Overwrite existing notebook",
+            "default": false
+          }
+        },
+        "required": [
+          "path",
+          "content"
+        ]
+      },
+      "auto_generated": true
+    },
+    "workspace_export": {
+      "name": "workspace_export",
+      "description": "Export a notebook or file",
+      "api_path": "/api/2.0/workspace/export",
+      "api_method": "GET",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "auto_generated": true
+    },
+    "workspace_delete": {
+      "name": "workspace_delete",
+      "description": "Delete workspace object",
+      "api_path": "/api/2.0/workspace/delete",
+      "api_method": "POST",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "auto_generated": true
+    },
+    "workspace_mkdirs": {
+      "name": "workspace_mkdirs",
+      "description": "Create directory in workspace",
+      "api_path": "/api/2.0/workspace/mkdirs",
+      "api_method": "POST",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "auto_generated": true
+    },
+    "workspace_get_status": {
+      "name": "workspace_get_status",
+      "description": "Get workspace object status",
+      "api_path": "/api/2.0/workspace/get-status",
+      "api_method": "GET",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "auto_generated": true
+    },
+    "dbfs_list": {
+      "name": "dbfs_list",
+      "description": "List files in DBFS",
+      "api_path": "/api/2.0/dbfs/list",
+      "api_method": "GET",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "DBFS path to list (e.g., /FileStore)",
+            "default": "/"
+          }
+        },
+        "required": []
+      },
+      "auto_generated": true
+    },
+    "dbfs_read": {
+      "name": "dbfs_read",
+      "description": "Read file from DBFS",
+      "api_path": "/api/2.0/dbfs/read",
+      "api_method": "GET",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "DBFS file path to read"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      },
+      "auto_generated": true
+    },
+    "dbfs_delete": {
+      "name": "dbfs_delete",
+      "description": "Delete file from DBFS",
+      "api_path": "/api/2.0/dbfs/delete",
+      "api_method": "POST",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "DBFS path to delete"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      },
+      "auto_generated": true
+    },
+    "dbfs_mkdirs": {
+      "name": "dbfs_mkdirs",
+      "description": "Create directory in DBFS",
+      "api_path": "/api/2.0/dbfs/mkdirs",
+      "api_method": "POST",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "DBFS path to create"
+          }
+        },
+        "required": [
+          "path"
+        ]
+      },
+      "auto_generated": true
+    },
+    "secrets_list_scopes": {
+      "name": "secrets_list_scopes",
+      "description": "List secret scopes",
+      "api_path": "/api/2.0/secrets/scopes/list",
+      "api_method": "GET",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "auto_generated": true
+    },
+    "secrets_list_secrets": {
+      "name": "secrets_list_secrets",
+      "description": "List secrets in a scope",
+      "api_path": "/api/2.0/secrets/list",
+      "api_method": "GET",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "auto_generated": true
+    },
+    "repos_list": {
+      "name": "repos_list",
+      "description": "List Git repos",
+      "api_path": "/api/2.0/repos",
+      "api_method": "GET",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "auto_generated": true
+    },
+    "repos_get": {
+      "name": "repos_get",
+      "description": "Get repo details",
+      "api_path": "/api/2.0/repos/{repo_id}",
+      "api_method": "GET",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "repo_id": {
+            "type": "string",
+            "description": "Repo Id"
+          }
+        },
+        "required": [
+          "repo_id"
+        ]
+      },
+      "auto_generated": true
+    },
+    "repos_update": {
+      "name": "repos_update",
+      "description": "Update/pull repo",
+      "api_path": "/api/2.0/repos/{repo_id}",
+      "api_method": "PATCH",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "repo_id": {
+            "type": "string",
+            "description": "Repo Id"
+          }
+        },
+        "required": [
+          "repo_id"
+        ]
+      },
+      "auto_generated": true
+    },
+    "pipelines_list": {
+      "name": "pipelines_list",
+      "description": "List Delta Live Tables pipelines",
+      "api_path": "/api/2.0/pipelines",
+      "api_method": "GET",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "auto_generated": true
+    },
+    "pipelines_get": {
+      "name": "pipelines_get",
+      "description": "Get pipeline details",
+      "api_path": "/api/2.0/pipelines/{pipeline_id}",
+      "api_method": "GET",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pipeline_id": {
+            "type": "string",
+            "description": "Pipeline Id"
+          }
+        },
+        "required": [
+          "pipeline_id"
+        ]
+      },
+      "auto_generated": true
+    },
+    "pipelines_start": {
+      "name": "pipelines_start",
+      "description": "Start pipeline",
+      "api_path": "/api/2.0/pipelines/{pipeline_id}/updates",
+      "api_method": "POST",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pipeline_id": {
+            "type": "string",
+            "description": "Pipeline Id"
+          }
+        },
+        "required": [
+          "pipeline_id"
+        ]
+      },
+      "auto_generated": true
+    },
+    "pipelines_stop": {
+      "name": "pipelines_stop",
+      "description": "Stop pipeline",
+      "api_path": "/api/2.0/pipelines/{pipeline_id}/stop",
+      "api_method": "POST",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pipeline_id": {
+            "type": "string",
+            "description": "Pipeline Id"
+          }
+        },
+        "required": [
+          "pipeline_id"
+        ]
+      },
+      "auto_generated": true
+    },
+    "mlflow_list_experiments": {
+      "name": "mlflow_list_experiments",
+      "description": "List MLflow experiments",
+      "api_path": "/api/2.0/mlflow/experiments/list",
+      "api_method": "GET",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "auto_generated": true
+    },
+    "mlflow_list_models": {
+      "name": "mlflow_list_models",
+      "description": "List registered models",
+      "api_path": "/api/2.0/mlflow/registered-models/list",
+      "api_method": "GET",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "auto_generated": true
+    },
+    "mlflow_search_runs": {
+      "name": "mlflow_search_runs",
+      "description": "Search MLflow runs",
+      "api_path": "/api/2.0/mlflow/runs/search",
+      "api_method": "POST",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "auto_generated": true
+    },
+    "serving_list_endpoints": {
+      "name": "serving_list_endpoints",
+      "description": "List model serving endpoints",
+      "api_path": "/api/2.0/serving-endpoints",
+      "api_method": "GET",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "auto_generated": true
+    },
+    "serving_get_endpoint": {
+      "name": "serving_get_endpoint",
+      "description": "Get serving endpoint details",
+      "api_path": "/api/2.0/serving-endpoints/{name}",
+      "api_method": "GET",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "auto_generated": true
+    }
+  },
+  "last_updated": "2026-02-06T08:20:16.532024",
+  "count": 30
+}

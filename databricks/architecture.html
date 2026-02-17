@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Self-Evolving Databricks AI Agent - Architecture</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0a0e1a;
+            color: #e0e6f0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(255, 107, 53, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 188, 212, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(156, 39, 176, 0.06) 0%, transparent 50%);
+            z-index: -1;
+            animation: bgPulse 8s ease-in-out infinite alternate;
+        }
+        @keyframes bgPulse {
+            0% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        header {
+            text-align: center;
+            padding: 50px 20px 30px;
+            position: relative;
+        }
+        header h1 {
+            font-size: 2.6em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FF6B35, #00BCD4, #9C27B0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        header p {
+            font-size: 1.15em;
+            color: #8892a8;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 30px 60px;
+        }
+
+        /* ── High-level diagram ── */
+        .diagram-section {
+            margin: 40px 0 50px;
+        }
+        .diagram-section h2 {
+            text-align: center;
+            font-size: 1.5em;
+            color: #00BCD4;
+            margin-bottom: 30px;
+        }
+
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            flex-wrap: wrap;
+            padding: 30px 10px;
+        }
+        .flow-box {
+            background: linear-gradient(145deg, #141a2e, #1a2240);
+            border: 1.5px solid;
+            border-radius: 14px;
+            padding: 22px 20px;
+            text-align: center;
+            min-width: 190px;
+            max-width: 210px;
+            position: relative;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .flow-box:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+        }
+        .flow-box.user    { border-color: #FF6B35; }
+        .flow-box.app     { border-color: #00BCD4; }
+        .flow-box.mcp     { border-color: #9C27B0; }
+        .flow-box.db      { border-color: #FF9800; }
+        .flow-box.storage { border-color: #4CAF50; }
+
+        .flow-box .icon { font-size: 2em; margin-bottom: 8px; }
+        .flow-box h3 { font-size: 1em; margin-bottom: 4px; }
+        .flow-box .sub { font-size: 0.78em; color: #8892a8; }
+
+        .arrow {
+            font-size: 1.6em;
+            color: #4a5578;
+            padding: 0 8px;
+            user-select: none;
+        }
+
+        /* ── File cards ── */
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 28px;
+            margin-top: 40px;
+        }
+        .file-card {
+            background: linear-gradient(160deg, #111726, #161d34);
+            border: 1px solid #1e2846;
+            border-radius: 16px;
+            padding: 28px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+        .file-card:hover { border-color: #3a4a70; }
+        .file-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+        }
+        .file-card.orange::before  { background: linear-gradient(90deg, #FF6B35, #FF9800); }
+        .file-card.cyan::before    { background: linear-gradient(90deg, #00BCD4, #26C6DA); }
+        .file-card.purple::before  { background: linear-gradient(90deg, #9C27B0, #CE93D8); }
+        .file-card.green::before   { background: linear-gradient(90deg, #4CAF50, #81C784); }
+        .file-card.blue::before    { background: linear-gradient(90deg, #2196F3, #64B5F6); }
+
+        .file-card .file-name {
+            font-family: 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 1.1em;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .file-card .file-role {
+            font-size: 0.85em;
+            color: #8892a8;
+            margin-bottom: 16px;
+        }
+        .file-card .file-desc {
+            font-size: 0.92em;
+            line-height: 1.6;
+            color: #c0c8dc;
+            margin-bottom: 16px;
+        }
+
+        .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+        .tag {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.72em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .tag.api     { background: rgba(255,107,53,0.15); color: #FF6B35; }
+        .tag.ai      { background: rgba(0,188,212,0.15);  color: #00BCD4; }
+        .tag.storage { background: rgba(76,175,80,0.15);   color: #4CAF50; }
+        .tag.config  { background: rgba(255,152,0,0.15);   color: #FF9800; }
+        .tag.evolve  { background: rgba(156,39,176,0.15);  color: #CE93D8; }
+        .tag.pydantic{ background: rgba(33,150,243,0.15);  color: #64B5F6; }
+
+        /* Key functions list */
+        .fn-list { list-style: none; padding: 0; }
+        .fn-list li {
+            padding: 5px 0;
+            font-size: 0.85em;
+            border-bottom: 1px solid #1a2040;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+        .fn-list li:last-child { border-bottom: none; }
+        .fn-list .fn-name {
+            font-family: 'Fira Code', monospace;
+            color: #26C6DA;
+            white-space: nowrap;
+        }
+        .fn-list .fn-desc { color: #8892a8; }
+
+        /* ── Layers section ── */
+        .layers-section {
+            margin-top: 60px;
+        }
+        .layers-section h2 {
+            text-align: center;
+            font-size: 1.5em;
+            color: #FF6B35;
+            margin-bottom: 30px;
+        }
+        .layer-stack {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .layer {
+            display: flex;
+            align-items: stretch;
+            margin-bottom: 4px;
+            border-radius: 10px;
+            overflow: hidden;
+            min-height: 60px;
+        }
+        .layer-label {
+            width: 170px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 12px;
+        }
+        .layer-content {
+            flex: 1;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.88em;
+        }
+        .layer-content code {
+            background: rgba(0,0,0,0.25);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.88em;
+        }
+        .layer:nth-child(1) .layer-label { background: #FF6B35; color: #fff; }
+        .layer:nth-child(1) .layer-content { background: rgba(255,107,53,0.08); border: 1px solid rgba(255,107,53,0.2); }
+        .layer:nth-child(2) .layer-label { background: #00BCD4; color: #0a0e1a; }
+        .layer:nth-child(2) .layer-content { background: rgba(0,188,212,0.08); border: 1px solid rgba(0,188,212,0.2); }
+        .layer:nth-child(3) .layer-label { background: #9C27B0; color: #fff; }
+        .layer:nth-child(3) .layer-content { background: rgba(156,39,176,0.08); border: 1px solid rgba(156,39,176,0.2); }
+        .layer:nth-child(4) .layer-label { background: #FF9800; color: #0a0e1a; }
+        .layer:nth-child(4) .layer-content { background: rgba(255,152,0,0.08); border: 1px solid rgba(255,152,0,0.2); }
+        .layer:nth-child(5) .layer-label { background: #4CAF50; color: #fff; }
+        .layer:nth-child(5) .layer-content { background: rgba(76,175,80,0.08); border: 1px solid rgba(76,175,80,0.2); }
+
+        /* ── Data flow section ── */
+        .data-flow-section {
+            margin-top: 60px;
+        }
+        .data-flow-section h2 {
+            text-align: center;
+            font-size: 1.5em;
+            color: #9C27B0;
+            margin-bottom: 30px;
+        }
+
+        .flow-steps {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+        }
+        .flow-steps::before {
+            content: '';
+            position: absolute;
+            left: 30px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #FF6B35, #00BCD4, #9C27B0, #FF9800, #4CAF50);
+        }
+        .flow-step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            position: relative;
+        }
+        .step-number {
+            width: 60px;
+            min-width: 60px;
+            height: 36px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.9em;
+            z-index: 1;
+        }
+        .flow-step:nth-child(1) .step-number { background: #FF6B35; color: #fff; }
+        .flow-step:nth-child(2) .step-number { background: #00BCD4; color: #0a0e1a; }
+        .flow-step:nth-child(3) .step-number { background: #9C27B0; color: #fff; }
+        .flow-step:nth-child(4) .step-number { background: #FF9800; color: #0a0e1a; }
+        .flow-step:nth-child(5) .step-number { background: #4CAF50; color: #fff; }
+        .flow-step:nth-child(6) .step-number { background: #2196F3; color: #fff; }
+        .flow-step:nth-child(7) .step-number { background: #FF6B35; color: #fff; }
+
+        .step-content {
+            background: #111726;
+            border: 1px solid #1e2846;
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-left: 16px;
+            flex: 1;
+        }
+        .step-content h4 { font-size: 0.95em; margin-bottom: 4px; }
+        .step-content p { font-size: 0.85em; color: #8892a8; line-height: 1.5; }
+        .step-content code { color: #26C6DA; font-family: 'Fira Code', monospace; font-size: 0.9em; }
+
+        /* ── Evolution section ── */
+        .evolution-section {
+            margin-top: 60px;
+        }
+        .evolution-section h2 {
+            text-align: center;
+            font-size: 1.5em;
+            color: #4CAF50;
+            margin-bottom: 30px;
+        }
+        .evo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .evo-card {
+            background: #111726;
+            border: 1px solid #1e2846;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: border-color 0.3s, transform 0.3s;
+        }
+        .evo-card:hover { border-color: #4CAF50; transform: translateY(-3px); }
+        .evo-card .evo-icon { font-size: 2em; margin-bottom: 10px; }
+        .evo-card h4 { color: #81C784; margin-bottom: 6px; }
+        .evo-card p { font-size: 0.82em; color: #8892a8; line-height: 1.5; }
+        .evo-card .evo-api {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.75em;
+            color: #4a5578;
+            margin-top: 8px;
+        }
+
+        /* ── Tech stack ── */
+        .tech-section {
+            margin-top: 60px;
+        }
+        .tech-section h2 {
+            text-align: center;
+            font-size: 1.5em;
+            color: #2196F3;
+            margin-bottom: 30px;
+        }
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 14px;
+            max-width: 850px;
+            margin: 0 auto;
+        }
+        .tech-item {
+            background: #111726;
+            border: 1px solid #1e2846;
+            border-radius: 10px;
+            padding: 16px 10px;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+        .tech-item:hover { border-color: #2196F3; }
+        .tech-item .tech-name { font-weight: 700; font-size: 0.9em; margin-bottom: 4px; }
+        .tech-item .tech-role { font-size: 0.72em; color: #8892a8; }
+
+        /* ── Footer ── */
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: #4a5578;
+            font-size: 0.82em;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header h1 { font-size: 1.8em; }
+            .files-grid { grid-template-columns: 1fr; }
+            .layer { flex-direction: column; }
+            .layer-label { width: 100%; }
+            .flow-diagram { flex-direction: column; }
+            .arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Self-Evolving Databricks AI Agent</h1>
+    <p>An AI-powered terminal bot that dynamically discovers and adds new Databricks API capabilities at runtime, persisting evolved tools across sessions.</p>
+</header>
+
+<div class="container">
+
+    <!-- ════════ HIGH-LEVEL FLOW ════════ -->
+    <div class="diagram-section">
+        <h2>System Overview</h2>
+        <div class="flow-diagram">
+            <div class="flow-box user">
+                <div class="icon">&#128100;</div>
+                <h3>User</h3>
+                <div class="sub">Terminal Input</div>
+            </div>
+            <div class="arrow">&#10132;</div>
+            <div class="flow-box app">
+                <div class="icon">&#129302;</div>
+                <h3>app.py</h3>
+                <div class="sub">LangChain Agent<br>+ Azure OpenAI</div>
+            </div>
+            <div class="arrow">&#10132;</div>
+            <div class="flow-box mcp">
+                <div class="icon">&#9881;</div>
+                <h3>mcp_server.py</h3>
+                <div class="sub">FastAPI MCP Server<br>Tool Registry</div>
+            </div>
+            <div class="arrow">&#10132;</div>
+            <div class="flow-box db">
+                <div class="icon">&#9889;</div>
+                <h3>Databricks</h3>
+                <div class="sub">SQL Warehouse<br>REST API 2.0</div>
+            </div>
+            <div class="arrow">&#8596;</div>
+            <div class="flow-box storage">
+                <div class="icon">&#128190;</div>
+                <h3>evolved_tools.json</h3>
+                <div class="sub">Persistent<br>Tool Memory</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════ FILE CARDS ════════ -->
+    <div class="files-grid">
+
+        <!-- app.py -->
+        <div class="file-card cyan">
+            <div class="file-name">app.py</div>
+            <div class="file-role">Terminal Bot &amp; AI Agent Client</div>
+            <div class="tag-row">
+                <span class="tag ai">LangChain</span>
+                <span class="tag ai">Azure OpenAI</span>
+                <span class="tag pydantic">Pydantic v1</span>
+            </div>
+            <div class="file-desc">
+                The user-facing terminal interface. Connects to Azure OpenAI (GPT-4o) via LangChain, registers 23+ built-in tools as <code>StructuredTool</code> instances, and dynamically loads evolved tools from the MCP server on startup and after each interaction.
+            </div>
+            <ul class="fn-list">
+                <li><span class="fn-name">main()</span><span class="fn-desc">REPL loop &mdash; reads input, invokes agent</span></li>
+                <li><span class="fn-name">call_mcp_tool()</span><span class="fn-desc">HTTP POST to MCP /execute endpoint</span></li>
+                <li><span class="fn-name">refresh_tools()</span><span class="fn-desc">Hot-loads new evolved tools into the agent</span></li>
+                <li><span class="fn-name">create_pydantic_model_from_schema()</span><span class="fn-desc">Builds Pydantic v1 models from JSON inputSchema</span></li>
+                <li><span class="fn-name">load_dynamic_tools_on_startup()</span><span class="fn-desc">Loads persisted evolved tools at boot</span></li>
+            </ul>
+        </div>
+
+        <!-- mcp_server.py -->
+        <div class="file-card purple">
+            <div class="file-name">mcp_server.py</div>
+            <div class="file-role">MCP Server &amp; Self-Evolution Engine</div>
+            <div class="tag-row">
+                <span class="tag api">FastAPI</span>
+                <span class="tag api">REST</span>
+                <span class="tag evolve">Self-Evolving</span>
+                <span class="tag storage">Persistence</span>
+            </div>
+            <div class="file-desc">
+                The backend brain. Exposes 23 static tools + unlimited dynamic tools via REST. Contains the Databricks API catalog (7 categories, 30+ endpoints) and auto-generates tool definitions at runtime. Executes SQL via SQL Warehouse (Unity Catalog) with cluster fallback.
+            </div>
+            <ul class="fn-list">
+                <li><span class="fn-name">execute_sql()</span><span class="fn-desc">SQL Warehouse first, cluster fallback</span></li>
+                <li><span class="fn-name">auto_generate_tool()</span><span class="fn-desc">Creates tool from API catalog entry</span></li>
+                <li><span class="fn-name">execute_dynamic_tool()</span><span class="fn-desc">Runs any evolved tool against Databricks API</span></li>
+                <li><span class="fn-name">save_evolved_tools()</span><span class="fn-desc">Persists DYNAMIC_TOOLS to JSON</span></li>
+                <li><span class="fn-name">load_evolved_tools()</span><span class="fn-desc">Restores tools from JSON on startup</span></li>
+            </ul>
+        </div>
+
+        <!-- .env -->
+        <div class="file-card orange">
+            <div class="file-name">.env</div>
+            <div class="file-role">Configuration &amp; Credentials</div>
+            <div class="tag-row">
+                <span class="tag config">Config</span>
+                <span class="tag config">Secrets</span>
+            </div>
+            <div class="file-desc">
+                Stores all connection credentials and endpoints. Loaded by <code>python-dotenv</code> at startup in both <code>app.py</code> and <code>mcp_server.py</code>.
+            </div>
+            <ul class="fn-list">
+                <li><span class="fn-name">AZURE_OPENAI_*</span><span class="fn-desc">Azure OpenAI key, endpoint, deployment</span></li>
+                <li><span class="fn-name">DATABRICKS_HOST</span><span class="fn-desc">Workspace URL</span></li>
+                <li><span class="fn-name">DATABRICKS_TOKEN</span><span class="fn-desc">Personal access token</span></li>
+                <li><span class="fn-name">DATABRICKS_CLUSTER_ID</span><span class="fn-desc">Default cluster (fallback SQL)</span></li>
+                <li><span class="fn-name">DATABRICKS_WAREHOUSE_ID</span><span class="fn-desc">SQL Warehouse for Unity Catalog</span></li>
+                <li><span class="fn-name">MCP_DATABRICKS_URL</span><span class="fn-desc">MCP server address (localhost:8099)</span></li>
+            </ul>
+        </div>
+
+        <!-- evolved_tools.json -->
+        <div class="file-card green">
+            <div class="file-name">evolved_tools.json</div>
+            <div class="file-role">Persistent Tool Memory</div>
+            <div class="tag-row">
+                <span class="tag storage">JSON</span>
+                <span class="tag evolve">Evolution</span>
+            </div>
+            <div class="file-desc">
+                Auto-generated file that stores all dynamically discovered tools. Survives server restarts. Currently holds 30 evolved tools across 7 API categories: clusters, workspace, DBFS, secrets, repos, pipelines, MLflow, and serving.
+            </div>
+            <ul class="fn-list">
+                <li><span class="fn-name">tools{}</span><span class="fn-desc">Map of tool_name &rarr; full tool definition</span></li>
+                <li><span class="fn-name">last_updated</span><span class="fn-desc">ISO timestamp of last evolution</span></li>
+                <li><span class="fn-name">count</span><span class="fn-desc">Total number of persisted tools</span></li>
+            </ul>
+        </div>
+
+    </div>
+
+    <!-- ════════ ARCHITECTURE LAYERS ════════ -->
+    <div class="layers-section">
+        <h2>Architecture Layers</h2>
+        <div class="layer-stack">
+            <div class="layer">
+                <div class="layer-label">Presentation</div>
+                <div class="layer-content">
+                    Terminal REPL in <code>app.py</code> &mdash; User types natural language &rarr; agent responds with formatted results
+                </div>
+            </div>
+            <div class="layer">
+                <div class="layer-label">AI Agent</div>
+                <div class="layer-content">
+                    <code>LangChain</code> <code>AgentExecutor</code> <code>Azure OpenAI GPT-4o</code> <code>ConversationBufferMemory</code> <code>StructuredTool</code>
+                </div>
+            </div>
+            <div class="layer">
+                <div class="layer-label">MCP Server</div>
+                <div class="layer-content">
+                    <code>FastAPI :8099</code> &mdash; /tools, /execute, /health, /evolve/discover, /evolve/tools, /evolve/add_custom, /evolve/reload
+                </div>
+            </div>
+            <div class="layer">
+                <div class="layer-label">Databricks</div>
+                <div class="layer-content">
+                    <code>SQL Statements API</code> (warehouse) &bull; <code>Commands API 1.2</code> (cluster) &bull; <code>REST API 2.0/2.1</code> (clusters, jobs, workspace, DBFS, MLflow&hellip;)
+                </div>
+            </div>
+            <div class="layer">
+                <div class="layer-label">Persistence</div>
+                <div class="layer-content">
+                    <code>evolved_tools.json</code> &mdash; survived tools &bull; <code>.env</code> &mdash; credentials &bull; <code>ConversationBufferMemory</code> &mdash; session chat
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════ DATA FLOW ════════ -->
+    <div class="data-flow-section">
+        <h2>Request Flow &mdash; "Show me tables in dbrmitko.default"</h2>
+        <div class="flow-steps">
+            <div class="flow-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h4>User Input</h4>
+                    <p>User types <code>"Show me tables in dbrmitko.default"</code> in terminal</p>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h4>LangChain Agent Reasoning</h4>
+                    <p>GPT-4o analyzes the prompt, matches it to the <code>list_tables</code> tool, and calls <code>list_tables_func(database_schema="dbrmitko.default")</code></p>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h4>HTTP to MCP Server</h4>
+                    <p><code>POST http://localhost:8099/execute</code> with body <code>{"tool_name": "list_tables", "arguments": {"schema": "dbrmitko.default"}}</code></p>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h4>SQL Generation</h4>
+                    <p>MCP server builds <code>SHOW TABLES IN dbrmitko.default</code> (detects <code>"."</code> &rarr; Unity Catalog format)</p>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                    <h4>SQL Warehouse Execution</h4>
+                    <p><code>POST /api/2.0/sql/statements</code> with <code>warehouse_id=adc04bc39671c64d</code>. Parses response from <code>manifest.schema.columns</code> + <code>result.data_array</code></p>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="step-number">6</div>
+                <div class="step-content">
+                    <h4>Response Parsing</h4>
+                    <p>Extracts table names from rows &rarr; <code>{"schema": "dbrmitko.default", "tables": ["hr_attendance_dummy"], "count": 1}</code></p>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="step-number">7</div>
+                <div class="step-content">
+                    <h4>User Output</h4>
+                    <p>GPT-4o formats the result: <em>"The schema <strong>dbrmitko.default</strong> contains 1 table: hr_attendance_dummy"</em></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════ SELF-EVOLUTION ════════ -->
+    <div class="evolution-section">
+        <h2>Self-Evolution &mdash; API Discovery Catalog</h2>
+        <p style="text-align:center; color:#8892a8; margin-bottom:24px; font-size:0.9em;">
+            When the agent encounters an unknown capability, it calls <code>evolve_discover</code> to scan the API catalog and auto-generate new tools.
+        </p>
+        <div class="evo-grid">
+            <div class="evo-card">
+                <div class="evo-icon">&#9881;</div>
+                <h4>Clusters</h4>
+                <p>Create, edit, resize, restart, delete clusters. List node types &amp; Spark versions.</p>
+                <div class="evo-api">7 endpoints &bull; /api/2.0/clusters/*</div>
+            </div>
+            <div class="evo-card">
+                <div class="evo-icon">&#128221;</div>
+                <h4>Workspace</h4>
+                <p>Import/export notebooks, create directories, delete objects, check status.</p>
+                <div class="evo-api">5 endpoints &bull; /api/2.0/workspace/*</div>
+            </div>
+            <div class="evo-card">
+                <div class="evo-icon">&#128193;</div>
+                <h4>DBFS</h4>
+                <p>List, read, delete files and create directories in the Databricks File System.</p>
+                <div class="evo-api">4 endpoints &bull; /api/2.0/dbfs/*</div>
+            </div>
+            <div class="evo-card">
+                <div class="evo-icon">&#128274;</div>
+                <h4>Secrets</h4>
+                <p>List secret scopes and secrets for secure credential management.</p>
+                <div class="evo-api">2 endpoints &bull; /api/2.0/secrets/*</div>
+            </div>
+            <div class="evo-card">
+                <div class="evo-icon">&#128640;</div>
+                <h4>Repos</h4>
+                <p>List, get details, and update/pull Git repositories.</p>
+                <div class="evo-api">3 endpoints &bull; /api/2.0/repos/*</div>
+            </div>
+            <div class="evo-card">
+                <div class="evo-icon">&#9878;</div>
+                <h4>Pipelines (DLT)</h4>
+                <p>List, get, start and stop Delta Live Tables pipelines.</p>
+                <div class="evo-api">4 endpoints &bull; /api/2.0/pipelines/*</div>
+            </div>
+            <div class="evo-card">
+                <div class="evo-icon">&#129504;</div>
+                <h4>MLflow</h4>
+                <p>List experiments, registered models, and search ML training runs.</p>
+                <div class="evo-api">3 endpoints &bull; /api/2.0/mlflow/*</div>
+            </div>
+            <div class="evo-card">
+                <div class="evo-icon">&#127760;</div>
+                <h4>Serving</h4>
+                <p>List and inspect model serving endpoints for real-time inference.</p>
+                <div class="evo-api">2 endpoints &bull; /api/2.0/serving-endpoints/*</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════ PYDANTIC BRIDGE ════════ -->
+    <div class="layers-section">
+        <h2 style="color: #64B5F6;">Pydantic v1/v2 Bridge</h2>
+        <div style="max-width:800px; margin:0 auto; background:#111726; border:1px solid #1e2846; border-radius:14px; padding:28px;">
+            <p style="font-size:0.92em; line-height:1.7; color:#c0c8dc; margin-bottom:16px;">
+                LangChain internally uses <strong>Pydantic v1</strong> for tool argument schemas, but the project installs <strong>Pydantic v2</strong>.
+                The bridge imports from <code>pydantic.v1</code> (the compatibility layer) to create models that LangChain accepts:
+            </p>
+            <div style="background:#0a0e1a; border-radius:8px; padding:16px; font-family:'Fira Code',monospace; font-size:0.82em; line-height:1.6; overflow-x:auto;">
+                <span style="color:#8892a8;"># app.py - Pydantic v1 compatibility imports</span><br>
+                <span style="color:#9C27B0;">from</span> <span style="color:#26C6DA;">pydantic.v1</span> <span style="color:#9C27B0;">import</span> BaseModel, Field, create_model<br><br>
+                <span style="color:#8892a8;"># Dynamically create models from JSON inputSchema</span><br>
+                <span style="color:#FF6B35;">def</span> <span style="color:#26C6DA;">create_pydantic_model_from_schema</span>(tool_name, input_schema):<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#8892a8;"># Maps JSON types &rarr; Python types</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#8892a8;"># Creates field definitions with descriptions</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9C27B0;">return</span> create_model(ModelName, __base__=BaseModel, **fields)
+            </div>
+            <p style="font-size:0.82em; color:#8892a8; margin-top:14px;">
+                This allows each evolved tool's <code>inputSchema</code> (JSON) to become a typed Pydantic model that LangChain's <code>StructuredTool</code> can validate at runtime.
+            </p>
+        </div>
+    </div>
+
+    <!-- ════════ TECH STACK ════════ -->
+    <div class="tech-section">
+        <h2>Technology Stack</h2>
+        <div class="tech-grid">
+            <div class="tech-item">
+                <div class="tech-name">Python 3.9+</div>
+                <div class="tech-role">Runtime</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-name">FastAPI</div>
+                <div class="tech-role">MCP Server Framework</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-name">Uvicorn</div>
+                <div class="tech-role">ASGI Server</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-name">LangChain</div>
+                <div class="tech-role">Agent Framework</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-name">Azure OpenAI</div>
+                <div class="tech-role">GPT-4o LLM</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-name">Pydantic v1/v2</div>
+                <div class="tech-role">Schema Validation</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-name">HTTPX</div>
+                <div class="tech-role">Async HTTP Client</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-name">python-dotenv</div>
+                <div class="tech-role">Env Configuration</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-name">Databricks API</div>
+                <div class="tech-role">Data Platform</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-name">Unity Catalog</div>
+                <div class="tech-role">Data Governance</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    Self-Evolving Databricks AI Agent &mdash; Architecture Documentation &mdash; 2026
+</footer>
+
+</body>
+</html>

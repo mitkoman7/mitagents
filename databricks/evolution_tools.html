@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Databricks MCP Self-Evolution System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #eee;
+            min-height: 100vh;
+            padding: 40px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        .section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .section h2 {
+            color: #48dbfb;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section h2 .icon {
+            font-size: 1.5em;
+        }
+        .architecture {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .arch-box {
+            background: rgba(72, 219, 251, 0.1);
+            border: 2px solid #48dbfb;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        .arch-box h3 {
+            color: #48dbfb;
+            margin-bottom: 10px;
+        }
+        .arch-box p {
+            font-size: 0.9em;
+            color: #aaa;
+        }
+        .arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            color: #feca57;
+        }
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .tool-card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            padding: 15px;
+            border-left: 4px solid;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .tool-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .tool-card.cluster { border-color: #ff6b6b; }
+        .tool-card.workspace { border-color: #feca57; }
+        .tool-card.dbfs { border-color: #48dbfb; }
+        .tool-card.mlflow { border-color: #ff9ff3; }
+        .tool-card.serving { border-color: #54a0ff; }
+        .tool-card.repos { border-color: #5f27cd; }
+        .tool-card.pipelines { border-color: #00d2d3; }
+        .tool-card.secrets { border-color: #ff6348; }
+        .tool-name {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+        .tool-desc {
+            color: #999;
+            font-size: 0.9em;
+        }
+        .tool-method {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            margin-top: 8px;
+        }
+        .tool-method.get { background: #27ae60; }
+        .tool-method.post { background: #e74c3c; }
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 30px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+        }
+        .category-header h3 {
+            font-size: 1.3em;
+        }
+        .category-header .badge {
+            background: rgba(255,255,255,0.1);
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+        }
+        .static-tools {
+            background: rgba(46, 204, 113, 0.1);
+            border: 1px solid #2ecc71;
+        }
+        .dynamic-tools {
+            background: rgba(155, 89, 182, 0.1);
+            border: 1px solid #9b59b6;
+        }
+        code {
+            background: rgba(0,0,0,0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .code-block {
+            background: #0d1117;
+            border-radius: 10px;
+            padding: 20px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .code-block pre {
+            color: #c9d1d9;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            line-height: 1.6;
+        }
+        .highlight { color: #79c0ff; }
+        .string { color: #a5d6ff; }
+        .comment { color: #8b949e; }
+        .keyword { color: #ff7b72; }
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .flow-step {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid #48dbfb;
+            border-radius: 50px;
+            padding: 15px 25px;
+            text-align: center;
+            min-width: 150px;
+        }
+        .flow-arrow {
+            color: #feca57;
+            font-size: 1.5em;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .stat-box {
+            background: linear-gradient(135deg, rgba(72,219,251,0.2), rgba(72,219,251,0.05));
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #48dbfb;
+        }
+        .stat-label {
+            color: #888;
+            margin-top: 5px;
+        }
+        .note {
+            background: rgba(254, 202, 87, 0.1);
+            border-left: 4px solid #feca57;
+            padding: 15px;
+            border-radius: 0 10px 10px 0;
+            margin: 20px 0;
+        }
+        .note strong {
+            color: #feca57;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        th {
+            background: rgba(255,255,255,0.05);
+            color: #48dbfb;
+        }
+        tr:hover {
+            background: rgba(255,255,255,0.02);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Databricks MCP Self-Evolution System</h1>
+        <p class="subtitle">AI Agent that Automatically Discovers and Adds New Capabilities</p>
+
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-number">22</div>
+                <div class="stat-label">Static Tools</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number">30</div>
+                <div class="stat-label">Evolvable Tools</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number">8</div>
+                <div class="stat-label">API Categories</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number">52</div>
+                <div class="stat-label">Total Potential</div>
+            </div>
+        </div>
+
+        <!-- Architecture -->
+        <div class="section">
+            <h2><span class="icon">🏗️</span> Architecture Overview</h2>
+            <div class="architecture">
+                <div class="arch-box">
+                    <h3>Terminal Bot (app.py)</h3>
+                    <p>LangChain Agent with Azure OpenAI. Manages tools and auto-refreshes when evolution occurs.</p>
+                </div>
+                <div class="arrow">→</div>
+                <div class="arch-box">
+                    <h3>MCP Server (mcp_server.py)</h3>
+                    <p>FastAPI server on port 8099. Contains API catalog and dynamic tool registry.</p>
+                </div>
+                <div class="arrow">→</div>
+                <div class="arch-box">
+                    <h3>Databricks APIs</h3>
+                    <p>REST APIs for clusters, DBFS, MLflow, Jobs, Notebooks, and more.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- How Evolution Works -->
+        <div class="section">
+            <h2><span class="icon">🧬</span> How Self-Evolution Works</h2>
+            <div class="flow-diagram">
+                <div class="flow-step">User asks for<br>new capability</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">Agent calls<br><code>evolve_discover</code></div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">MCP scans<br>API catalog</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">New tools<br>auto-generated</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">Agent refreshes<br>& uses tools</div>
+            </div>
+
+            <div class="note">
+                <strong>Key Concept:</strong> Tools are NOT hardcoded. They are dynamically generated from the
+                <code>DATABRICKS_API_CATALOG</code> dictionary in mcp_server.py. When <code>evolve_discover</code>
+                is called, it reads the catalog and creates tool definitions on-the-fly.
+            </div>
+        </div>
+
+        <!-- Static Tools -->
+        <div class="section static-tools">
+            <h2><span class="icon">🔧</span> Static Tools (Built-in, Always Available)</h2>
+            <p style="margin-bottom: 20px; color: #888;">These 22 tools are defined in app.py and always available without evolution.</p>
+
+            <table>
+                <tr>
+                    <th>Tool Name</th>
+                    <th>Description</th>
+                    <th>Category</th>
+                </tr>
+                <tr><td><code>execute_sql</code></td><td>Execute SQL query on Databricks</td><td>Data</td></tr>
+                <tr><td><code>list_databases</code></td><td>List all databases/schemas</td><td>Data</td></tr>
+                <tr><td><code>list_tables</code></td><td>List tables in a schema</td><td>Data</td></tr>
+                <tr><td><code>get_table_schema</code></td><td>Get columns of a table</td><td>Data</td></tr>
+                <tr><td><code>get_table_preview</code></td><td>Preview first N rows</td><td>Data</td></tr>
+                <tr><td><code>get_table_stats</code></td><td>Get table statistics</td><td>Data</td></tr>
+                <tr><td><code>search_tables</code></td><td>Search tables by pattern</td><td>Data</td></tr>
+                <tr><td><code>list_catalogs</code></td><td>List Unity Catalog catalogs</td><td>Data</td></tr>
+                <tr><td><code>list_clusters</code></td><td>List all clusters</td><td>Clusters</td></tr>
+                <tr><td><code>get_cluster_status</code></td><td>Get cluster status</td><td>Clusters</td></tr>
+                <tr><td><code>start_cluster</code></td><td>Start a cluster</td><td>Clusters</td></tr>
+                <tr><td><code>stop_cluster</code></td><td>Stop a cluster</td><td>Clusters</td></tr>
+                <tr><td><code>get_cluster_logs</code></td><td>Get cluster event logs</td><td>Clusters</td></tr>
+                <tr><td><code>list_jobs</code></td><td>List all jobs</td><td>Jobs</td></tr>
+                <tr><td><code>run_job</code></td><td>Run a job by ID</td><td>Jobs</td></tr>
+                <tr><td><code>get_job_run_status</code></td><td>Get job run status</td><td>Jobs</td></tr>
+                <tr><td><code>cancel_job_run</code></td><td>Cancel a running job</td><td>Jobs</td></tr>
+                <tr><td><code>list_notebooks</code></td><td>List items in workspace path</td><td>Workspace</td></tr>
+                <tr><td><code>find_notebooks</code></td><td>Find notebooks recursively</td><td>Workspace</td></tr>
+                <tr><td><code>list_workspace_folders</code></td><td>List folders in path</td><td>Workspace</td></tr>
+                <tr><td><code>run_notebook</code></td><td>Run a notebook</td><td>Workspace</td></tr>
+                <tr><td><code>evolve_discover</code></td><td>Discover new capabilities</td><td>Evolution</td></tr>
+                <tr><td><code>evolve_list</code></td><td>List evolved tools</td><td>Evolution</td></tr>
+            </table>
+        </div>
+
+        <!-- Dynamic Tools -->
+        <div class="section dynamic-tools">
+            <h2><span class="icon">🚀</span> Dynamic Tools (Discovered via Evolution)</h2>
+            <p style="margin-bottom: 20px; color: #888;">These 30 tools are generated from DATABRICKS_API_CATALOG when evolve_discover is called.</p>
+
+            <!-- Cluster Tools -->
+            <div class="category-header">
+                <h3 style="color: #ff6b6b;">Cluster Management</h3>
+                <span class="badge">7 tools</span>
+            </div>
+            <div class="tools-grid">
+                <div class="tool-card cluster">
+                    <div class="tool-name">cluster_create</div>
+                    <div class="tool-desc">Create a new Databricks cluster with specified configuration</div>
+                    <span class="tool-method post">POST</span>
+                </div>
+                <div class="tool-card cluster">
+                    <div class="tool-name">cluster_edit</div>
+                    <div class="tool-desc">Edit an existing cluster configuration</div>
+                    <span class="tool-method post">POST</span>
+                </div>
+                <div class="tool-card cluster">
+                    <div class="tool-name">cluster_resize</div>
+                    <div class="tool-desc">Resize a cluster's worker count</div>
+                    <span class="tool-method post">POST</span>
+                </div>
+                <div class="tool-card cluster">
+                    <div class="tool-name">cluster_restart</div>
+                    <div class="tool-desc">Restart a running cluster</div>
+                    <span class="tool-method post">POST</span>
+                </div>
+                <div class="tool-card cluster">
+                    <div class="tool-name">cluster_permanent_delete</div>
+                    <div class="tool-desc">Permanently delete a cluster</div>
+                    <span class="tool-method post">POST</span>
+                </div>
+                <div class="tool-card cluster">
+                    <div class="tool-name">cluster_list_node_types</div>
+                    <div class="tool-desc">List available node types for clusters</div>
+                    <span class="tool-method get">GET</span>
+                </div>
+                <div class="tool-card cluster">
+                    <div class="tool-name">cluster_spark_versions</div>
+                    <div class="tool-desc">List available Spark versions</div>
+                    <span class="tool-method get">GET</span>
+                </div>
+            </div>
+
+            <!-- Workspace Tools -->
+            <div class="category-header">
+                <h3 style="color: #feca57;">Workspace</h3>
+                <span class="badge">5 tools</span>
+            </div>
+            <div class="tools-grid">
+                <div class="tool-card workspace">
+                    <div class="tool-name">workspace_import</div>
+                    <div class="tool-desc">Import a notebook or file to workspace</div>
+                    <span class="tool-method post">POST</span>
+                </div>
+                <div class="tool-card workspace">
+                    <div class="tool-name">workspace_export</div>
+                    <div class="tool-desc">Export a notebook or file from workspace</div>
+                    <span class="tool-method get">GET</span>
+                </div>
+                <div class="tool-card workspace">
+                    <div class="tool-name">workspace_delete</div>
+                    <div class="tool-desc">Delete a workspace object</div>
+                    <span class="tool-method post">POST</span>
+                </div>
+                <div class="tool-card workspace">
+                    <div class="tool-name">workspace_mkdirs</div>
+                    <div class="tool-desc">Create directory in workspace</div>
+                    <span class="tool-method post">POST</span>
+                </div>
+                <div class="tool-card workspace">
+                    <div class="tool-name">workspace_get_status</div>
+                    <div class="tool-desc">Get workspace object status</div>
+                    <span class="tool-method get">GET</span>
+                </div>
+            </div>
+
+            <!-- DBFS Tools -->
+            <div class="category-header">
+                <h3 style="color: #48dbfb;">DBFS (Databricks File System)</h3>
+                <span class="badge">4 tools</span>
+            </div>
+            <div class="tools-grid">
+                <div class="tool-card dbfs">
+                    <div class="tool-name">dbfs_list</div>
+                    <div class="tool-desc">List files and directories in DBFS path</div>
+                    <span class="tool-method get">GET</span>
+                </div>
+                <div class="tool-card dbfs">
+                    <div class="tool-name">dbfs_read</div>
+                    <div class="tool-desc">Read file content from DBFS</div>
+                    <span class="tool-method get">GET</span>
+                </div>
+                <div class="tool-card dbfs">
+                    <div class="tool-name">dbfs_delete</div>
+                    <div class="tool-desc">Delete file or directory from DBFS</div>
+                    <span class="tool-method post">POST</span>
+                </div>
+                <div class="tool-card dbfs">
+                    <div class="tool-name">dbfs_mkdirs</div>
+                    <div class="tool-desc">Create directory in DBFS</div>
+                    <span class="tool-method post">POST</span>
+                </div>
+            </div>
+
+            <!-- MLflow Tools -->
+            <div class="category-header">
+                <h3 style="color: #ff9ff3;">MLflow</h3>
+                <span class="badge">3 tools</span>
+            </div>
+            <div class="tools-grid">
+                <div class="tool-card mlflow">
+                    <div class="tool-name">mlflow_list_experiments</div>
+                    <div class="tool-desc">List all MLflow experiments</div>
+                    <span class="tool-method get">GET</span>
+                </div>
+                <div class="tool-card mlflow">
+                    <div class="tool-name">mlflow_list_models</div>
+                    <div class="tool-desc">List registered ML models</div>
+                    <span class="tool-method get">GET</span>
+                </div>
+                <div class="tool-card mlflow">
+                    <div class="tool-name">mlflow_search_runs</div>
+                    <div class="tool-desc">Search MLflow experiment runs</div>
+                    <span class="tool-method post">POST</span>
+                </div>
+            </div>
+
+            <!-- Serving Tools -->
+            <div class="category-header">
+                <h3 style="color: #54a0ff;">Model Serving</h3>
+                <span class="badge">2 tools</span>
+            </div>
+            <div class="tools-grid">
+                <div class="tool-card serving">
+                    <div class="tool-name">serving_list_endpoints</div>
+                    <div class="tool-desc">List all model serving endpoints</div>
+                    <span class="tool-method get">GET</span>
+                </div>
+                <div class="tool-card serving">
+                    <div class="tool-name">serving_get_endpoint</div>
+                    <div class="tool-desc">Get serving endpoint details</div>
+                    <span class="tool-method get">GET</span>
+                </div>
+            </div>
+
+            <!-- Repos Tools -->
+            <div class="category-header">
+                <h3 style="color: #5f27cd;">Git Repos</h3>
+                <span class="badge">3 tools</span>
+            </div>
+            <div class="tools-grid">
+                <div class="tool-card repos">
+                    <div class="tool-name">repos_list</div>
+                    <div class="tool-desc">List all Git repositories</div>
+                    <span class="tool-method get">GET</span>
+                </div>
+                <div class="tool-card repos">
+                    <div class="tool-name">repos_get</div>
+                    <div class="tool-desc">Get repository details</div>
+                    <span class="tool-method get">GET</span>
+                </div>
+                <div class="tool-card repos">
+                    <div class="tool-name">repos_update</div>
+                    <div class="tool-desc">Update/pull repository</div>
+                    <span class="tool-method patch">PATCH</span>
+                </div>
+            </div>
+
+            <!-- Pipelines Tools -->
+            <div class="category-header">
+                <h3 style="color: #00d2d3;">Delta Live Tables Pipelines</h3>
+                <span class="badge">4 tools</span>
+            </div>
+            <div class="tools-grid">
+                <div class="tool-card pipelines">
+                    <div class="tool-name">pipelines_list</div>
+                    <div class="tool-desc">List all DLT pipelines</div>
+                    <span class="tool-method get">GET</span>
+                </div>
+                <div class="tool-card pipelines">
+                    <div class="tool-name">pipelines_get</div>
+                    <div class="tool-desc">Get pipeline details</div>
+                    <span class="tool-method get">GET</span>
+                </div>
+                <div class="tool-card pipelines">
+                    <div class="tool-name">pipelines_start</div>
+                    <div class="tool-desc">Start a pipeline</div>
+                    <span class="tool-method post">POST</span>
+                </div>
+                <div class="tool-card pipelines">
+                    <div class="tool-name">pipelines_stop</div>
+                    <div class="tool-desc">Stop a running pipeline</div>
+                    <span class="tool-method post">POST</span>
+                </div>
+            </div>
+
+            <!-- Secrets Tools -->
+            <div class="category-header">
+                <h3 style="color: #ff6348;">Secrets</h3>
+                <span class="badge">2 tools</span>
+            </div>
+            <div class="tools-grid">
+                <div class="tool-card secrets">
+                    <div class="tool-name">secrets_list_scopes</div>
+                    <div class="tool-desc">List all secret scopes</div>
+                    <span class="tool-method get">GET</span>
+                </div>
+                <div class="tool-card secrets">
+                    <div class="tool-name">secrets_list_secrets</div>
+                    <div class="tool-desc">List secrets in a scope</div>
+                    <span class="tool-method get">GET</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Code Location -->
+        <div class="section">
+            <h2><span class="icon">📁</span> Where Tools Are Defined in Code</h2>
+
+            <h3 style="margin: 20px 0 10px 0; color: #48dbfb;">1. API Catalog (mcp_server.py lines 915-952)</h3>
+            <div class="code-block">
+<pre><span class="comment"># Known Databricks API endpoints that can be auto-discovered</span>
+<span class="highlight">DATABRICKS_API_CATALOG</span> = {
+    <span class="string">"cluster"</span>: {
+        <span class="string">"create"</span>: {<span class="string">"method"</span>: <span class="string">"POST"</span>, <span class="string">"path"</span>: <span class="string">"/api/2.0/clusters/create"</span>, ...},
+        <span class="string">"restart"</span>: {<span class="string">"method"</span>: <span class="string">"POST"</span>, <span class="string">"path"</span>: <span class="string">"/api/2.0/clusters/restart"</span>, ...},
+        ...
+    },
+    <span class="string">"dbfs"</span>: {
+        <span class="string">"list"</span>: {<span class="string">"method"</span>: <span class="string">"GET"</span>, <span class="string">"path"</span>: <span class="string">"/api/2.0/dbfs/list"</span>, ...},
+        ...
+    },
+    <span class="string">"mlflow"</span>: { ... },
+    <span class="string">"serving"</span>: { ... },
+    ...
+}</pre>
+            </div>
+
+            <h3 style="margin: 20px 0 10px 0; color: #48dbfb;">2. Auto-Generate Tool Function (mcp_server.py lines 955-992)</h3>
+            <div class="code-block">
+<pre><span class="keyword">async def</span> <span class="highlight">auto_generate_tool</span>(category: str, action: str, api_info: dict) -> dict:
+    <span class="string">"""Auto-generate a new tool from API catalog"""</span>
+    tool_name = f<span class="string">"{category}_{action}"</span>
+
+    <span class="comment"># Build input schema from path parameters</span>
+    properties = {}
+    required = []
+    ...
+
+    tool_def = {
+        <span class="string">"name"</span>: tool_name,
+        <span class="string">"description"</span>: api_info[<span class="string">"description"</span>],
+        <span class="string">"api_path"</span>: path,
+        <span class="string">"api_method"</span>: api_info[<span class="string">"method"</span>],
+        ...
+    }
+
+    <span class="highlight">DYNAMIC_TOOLS</span>[tool_name] = tool_def
+    <span class="keyword">return</span> tool_def</pre>
+            </div>
+
+            <h3 style="margin: 20px 0 10px 0; color: #48dbfb;">3. Dynamic Tool Execution (mcp_server.py lines 994-1085)</h3>
+            <div class="code-block">
+<pre><span class="keyword">async def</span> <span class="highlight">execute_dynamic_tool</span>(tool_name: str, arguments: dict) -> dict:
+    <span class="string">"""Execute a dynamically generated tool"""</span>
+    <span class="keyword">if</span> tool_name <span class="keyword">not in</span> DYNAMIC_TOOLS:
+        <span class="keyword">return</span> {<span class="string">"error"</span>: f<span class="string">"Dynamic tool '{tool_name}' not found"</span>}
+
+    tool_def = DYNAMIC_TOOLS[tool_name]
+    api_path = tool_def[<span class="string">"api_path"</span>]
+    method = tool_def[<span class="string">"api_method"</span>]
+
+    <span class="comment"># Special handling for specific tools (dbfs_list, workspace_mkdirs, etc.)</span>
+    ...
+
+    <span class="comment"># Make HTTP request to Databricks API</span>
+    response = <span class="keyword">await</span> client.get/post(url, headers=get_headers(), ...)</pre>
+            </div>
+
+            <h3 style="margin: 20px 0 10px 0; color: #48dbfb;">4. Tool Refresh in Bot (app.py lines 64-101)</h3>
+            <div class="code-block">
+<pre><span class="keyword">def</span> <span class="highlight">refresh_tools</span>():
+    <span class="string">"""Refresh tool list with any newly evolved tools"""</span>
+    <span class="keyword">global</span> tools, agent, agent_executor
+
+    dynamic_tool_defs = get_dynamic_tools()  <span class="comment"># Fetch from MCP server</span>
+
+    <span class="keyword">for</span> tool_def <span class="keyword">in</span> dynamic_tool_defs:
+        <span class="keyword">if</span> tool_def[<span class="string">"name"</span>] <span class="keyword">not in</span> existing_names:
+            <span class="comment"># Create wrapper and add to LangChain tools</span>
+            wrapper = create_dynamic_tool_wrapper(tool_def[<span class="string">"name"</span>])
+            new_tool = StructuredTool.from_function(...)
+            new_tools.append(new_tool)
+
+    <span class="comment"># Recreate agent with new tools</span>
+    agent = create_openai_functions_agent(llm, tools, prompt)
+    agent_executor = AgentExecutor(...)</pre>
+            </div>
+        </div>
+
+        <!-- Usage Examples -->
+        <div class="section">
+            <h2><span class="icon">💡</span> Usage Examples</h2>
+
+            <div class="code-block">
+<pre><span class="comment"># Start MCP Server</span>
+$ python mcp_server.py
+
+<span class="comment"># Start Bot</span>
+$ python app.py
+
+<span class="comment"># Example conversations:</span>
+You: <span class="string">list files in dbfs</span>
+Bot: [Automatically evolves, then lists DBFS files]
+
+You: <span class="string">create a cluster named my-cluster</span>
+Bot: [Evolves cluster_create tool, creates cluster]
+
+You: <span class="string">show mlflow experiments</span>
+Bot: [Evolves mlflow_list_experiments, shows experiments]
+
+You: <span class="string">tools</span>
+Bot: [Shows all 52 available tools including evolved ones]</pre>
+            </div>
+        </div>
+
+        <!-- Persistence Section -->
+        <div class="section">
+            <h2><span class="icon">💾</span> Tool Persistence</h2>
+            <p style="margin-bottom: 15px;">Evolved tools are now saved to a JSON file and automatically loaded on server restart.</p>
+
+            <table>
+                <tr>
+                    <th>File</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td><code>databricks/evolved_tools.json</code></td>
+                    <td>Stores all dynamically evolved tools with metadata</td>
+                </tr>
+            </table>
+
+            <h3 style="margin: 20px 0 10px 0; color: #48dbfb;">Persistence Endpoints</h3>
+            <div class="tools-grid">
+                <div class="tool-card dbfs">
+                    <div class="tool-name">POST /evolve/reload</div>
+                    <div class="tool-desc">Reload evolved tools from JSON file</div>
+                </div>
+                <div class="tool-card cluster">
+                    <div class="tool-name">DELETE /evolve/clear</div>
+                    <div class="tool-desc">Clear all evolved tools (memory + file)</div>
+                </div>
+            </div>
+
+            <div class="code-block">
+<pre><span class="comment"># evolved_tools.json structure</span>
+{
+  <span class="string">"tools"</span>: {
+    <span class="string">"dbfs_list"</span>: {
+      <span class="string">"name"</span>: <span class="string">"dbfs_list"</span>,
+      <span class="string">"description"</span>: <span class="string">"List files in DBFS"</span>,
+      <span class="string">"api_path"</span>: <span class="string">"/api/2.0/dbfs/list"</span>,
+      <span class="string">"api_method"</span>: <span class="string">"GET"</span>,
+      ...
+    },
+    ...
+  },
+  <span class="string">"last_updated"</span>: <span class="string">"2024-01-15T10:30:00"</span>,
+  <span class="string">"count"</span>: 30
+}</pre>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; margin-top: 40px; color: #666; font-size: 0.9em;">
+            <p>Databricks MCP Self-Evolution System | Built with FastAPI + LangChain + Azure OpenAI</p>
+            <p style="margin-top: 5px;">Port: 8099 | Persistence: evolved_tools.json</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -226,28 +226,41 @@ def predict_winner(home_form: dict, away_form: dict, home_team: str, away_team: 
     """Predict match winner based on form analysis"""
 
     # Base probabilities (home advantage ~55%)
-    home_base = 45
-    away_base = 30
-    draw_base = 25
+    home_base = 40
+    away_base = 28
+    draw_base = 32
 
     # Adjust based on form scores
     form_diff = home_form["score"] - away_form["score"]
 
-    # Form adjustment (max 20% swing)
-    form_adjustment = min(max(form_diff / 5, -20), 20)
+    # Form adjustment (max 15% swing)
+    form_adjustment = min(max(form_diff / 6, -15), 15)
 
     # Goal scoring adjustment
-    home_attack = home_form["avg_goals_scored"] * 5
-    away_attack = away_form["avg_goals_scored"] * 5
+    home_attack = home_form["avg_goals_scored"] * 4
+    away_attack = away_form["avg_goals_scored"] * 4
 
     # Defense adjustment
-    home_defense = (2 - home_form["avg_goals_conceded"]) * 5
-    away_defense = (2 - away_form["avg_goals_conceded"]) * 5
+    home_defense = (2 - home_form["avg_goals_conceded"]) * 4
+    away_defense = (2 - away_form["avg_goals_conceded"]) * 4
+
+    # Calculate draw tendency based on team's draw history
+    home_draw_rate = home_form["draws"] / home_form["matches_analyzed"] if home_form["matches_analyzed"] > 0 else 0.25
+    away_draw_rate = away_form["draws"] / away_form["matches_analyzed"] if away_form["matches_analyzed"] > 0 else 0.25
+    combined_draw_tendency = (home_draw_rate + away_draw_rate) / 2
+
+    # Increase draw probability if teams are evenly matched (form diff < 10)
+    if abs(form_diff) < 10:
+        draw_boost = 10 + (combined_draw_tendency * 20)
+    elif abs(form_diff) < 20:
+        draw_boost = 5 + (combined_draw_tendency * 10)
+    else:
+        draw_boost = combined_draw_tendency * 5
 
     # Calculate final probabilities
     home_prob = home_base + form_adjustment + (home_attack - away_defense) / 2
     away_prob = away_base - form_adjustment + (away_attack - home_defense) / 2
-    draw_prob = 100 - home_prob - away_prob
+    draw_prob = draw_base + draw_boost
 
     # Normalize to ensure total is 100%
     total = home_prob + away_prob + draw_prob
@@ -255,20 +268,35 @@ def predict_winner(home_form: dict, away_form: dict, home_team: str, away_team: 
     away_prob = round((away_prob / total) * 100, 1)
     draw_prob = round(100 - home_prob - away_prob, 1)
 
-    # Determine prediction
-    if home_prob > away_prob and home_prob > draw_prob:
+    # Determine prediction - pick the highest probability
+    if draw_prob >= home_prob and draw_prob >= away_prob:
+        prediction = "Draw"
+        confidence = "High" if draw_prob > 35 else "Medium" if draw_prob > 28 else "Low"
+    elif home_prob > away_prob:
         prediction = f"{home_team} Win"
         confidence = "High" if home_prob > 50 else "Medium" if home_prob > 40 else "Low"
-    elif away_prob > home_prob and away_prob > draw_prob:
+    else:
         prediction = f"{away_team} Win"
         confidence = "High" if away_prob > 45 else "Medium" if away_prob > 35 else "Low"
-    else:
-        prediction = "Draw"
-        confidence = "Medium" if draw_prob > 30 else "Low"
 
     # Predicted score based on averages
     predicted_home_goals = round((home_form["avg_goals_scored"] + away_form["avg_goals_conceded"]) / 2)
     predicted_away_goals = round((away_form["avg_goals_scored"] + home_form["avg_goals_conceded"]) / 2)
+
+    # Convert probabilities to decimal odds (bookmaker style)
+    home_odds = round(100 / home_prob, 2) if home_prob > 0 else 0
+    draw_odds = round(100 / draw_prob, 2) if draw_prob > 0 else 0
+    away_odds = round(100 / away_prob, 2) if away_prob > 0 else 0
+
+    # Generate betting insight
+    if home_prob > 45:
+        value_bet = f"{home_team} to win - Strong favorite"
+    elif away_prob > 40:
+        value_bet = f"{away_team} to win - Good value"
+    elif draw_prob > 32:
+        value_bet = "Draw - Consider for accumulator"
+    else:
+        value_bet = "Tight match - High risk"
 
     return {
         "prediction": prediction,
@@ -279,6 +307,13 @@ def predict_winner(home_form: dict, away_form: dict, home_team: str, away_team: 
             "away_win": away_prob
         },
         "predicted_score": f"{predicted_home_goals}-{predicted_away_goals}",
+        "implied_odds": {
+            "home_win": home_odds,
+            "draw": draw_odds,
+            "away_win": away_odds,
+            "note": "Decimal odds based on calculated probabilities"
+        },
+        "betting_insight": value_bet,
         "analysis": {
             "home_form_score": home_form["score"],
             "away_form_score": away_form["score"],
@@ -286,7 +321,17 @@ def predict_winner(home_form: dict, away_form: dict, home_team: str, away_team: 
             "away_attack_rating": round(away_form["avg_goals_scored"] * 10, 1),
             "home_defense_rating": round((2 - home_form["avg_goals_conceded"]) * 10, 1),
             "away_defense_rating": round((2 - away_form["avg_goals_conceded"]) * 10, 1)
-        }
+        },
+        "factors_considered": [
+            f"Home team recent form: {home_form['wins']}W-{home_form['draws']}D-{home_form['losses']}L",
+            f"Away team recent form: {away_form['wins']}W-{away_form['draws']}D-{away_form['losses']}L",
+            f"Home attack strength: {round(home_form['avg_goals_scored'], 2)} goals/match",
+            f"Away attack strength: {round(away_form['avg_goals_scored'], 2)} goals/match",
+            f"Home defense: {round(home_form['avg_goals_conceded'], 2)} conceded/match",
+            f"Away defense: {round(away_form['avg_goals_conceded'], 2)} conceded/match",
+            f"Home draw tendency: {round(home_form['draws']/home_form['matches_analyzed']*100, 1)}%" if home_form['matches_analyzed'] > 0 else "N/A",
+            f"Away draw tendency: {round(away_form['draws']/away_form['matches_analyzed']*100, 1)}%" if away_form['matches_analyzed'] > 0 else "N/A"
+        ]
     }
 
 @app.post("/execute")
@@ -324,6 +369,9 @@ async def execute_tool(request: ToolRequest):
                 "predicted_score": prediction["predicted_score"],
                 "win_probabilities": prediction["probabilities"],
                 "analysis": prediction["analysis"],
+                "implied_odds": prediction.get("implied_odds", {}),
+                "betting_insight": prediction.get("betting_insight", ""),
+                "factors_considered": prediction.get("factors_considered", []),
                 "home_recent_form": {
                     "last_10_matches": f"{home_form['wins']}W-{home_form['draws']}D-{home_form['losses']}L",
                     "goals_scored": home_form["goals_for"],

@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pydantic in Self-Evolving Agent</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e4e4e4;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .subtitle {
+            text-align: center;
+            color: #8892b0;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        h2 {
+            color: #64ffda;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        h3 {
+            color: #ff6b6b;
+            margin: 20px 0 15px 0;
+            font-size: 1.2em;
+        }
+        p {
+            line-height: 1.8;
+            margin-bottom: 15px;
+            color: #b8c5d6;
+        }
+        .highlight {
+            color: #64ffda;
+            font-weight: bold;
+        }
+        .code-block {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            overflow-x: auto;
+            border: 1px solid #30363d;
+        }
+        .code-block pre {
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+            color: #c9d1d9;
+        }
+        .keyword { color: #ff7b72; }
+        .string { color: #a5d6ff; }
+        .comment { color: #8b949e; }
+        .function { color: #d2a8ff; }
+        .class { color: #7ee787; }
+        .variable { color: #ffa657; }
+        .decorator { color: #79c0ff; }
+
+        .diagram {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0d2137 100%);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .diagram-box {
+            display: inline-block;
+            background: rgba(100, 255, 218, 0.1);
+            border: 2px solid #64ffda;
+            border-radius: 10px;
+            padding: 15px 25px;
+            margin: 10px;
+            color: #64ffda;
+            font-weight: bold;
+        }
+        .diagram-arrow {
+            color: #ff6b6b;
+            font-size: 2em;
+            margin: 0 15px;
+        }
+        .flow-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .comparison-table th, .comparison-table td {
+            padding: 15px;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .comparison-table th {
+            background: rgba(233, 69, 96, 0.2);
+            color: #ff6b6b;
+        }
+        .comparison-table tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .problem-box {
+            background: rgba(255, 107, 107, 0.1);
+            border-left: 4px solid #ff6b6b;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 10px 10px 0;
+        }
+        .solution-box {
+            background: rgba(100, 255, 218, 0.1);
+            border-left: 4px solid #64ffda;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 10px 10px 0;
+        }
+
+        .icon {
+            font-size: 1.3em;
+        }
+
+        ul {
+            margin: 15px 0 15px 25px;
+            line-height: 2;
+        }
+        li {
+            color: #b8c5d6;
+        }
+
+        .version-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin: 5px;
+        }
+        .v1 { background: #ff6b6b; color: white; }
+        .v2 { background: #64ffda; color: #1a1a2e; }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            background: #e94560;
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pydantic in Self-Evolving Agent</h1>
+        <p class="subtitle">How dynamic schema validation enables LangChain tool evolution</p>
+
+        <!-- What is Pydantic -->
+        <div class="section">
+            <h2><span class="icon">📦</span> What is Pydantic?</h2>
+            <p>
+                <span class="highlight">Pydantic</span> is a Python library for data validation using Python type annotations.
+                It ensures that data conforms to expected types and structures, automatically converting and validating input data.
+            </p>
+
+            <div class="code-block">
+<pre><span class="keyword">from</span> pydantic <span class="keyword">import</span> BaseModel
+
+<span class="keyword">class</span> <span class="class">User</span>(BaseModel):
+    name: <span class="variable">str</span>
+    age: <span class="variable">int</span>
+    email: <span class="variable">str</span>
+
+<span class="comment"># Pydantic validates and converts data automatically</span>
+user = User(name=<span class="string">"Alice"</span>, age=<span class="string">"25"</span>, email=<span class="string">"alice@example.com"</span>)
+<span class="comment"># age is automatically converted from "25" (string) to 25 (int)</span>
+print(user.age)  <span class="comment"># Output: 25 (as integer)</span></pre>
+            </div>
+
+            <h3>Key Features</h3>
+            <ul>
+                <li><strong>Type Validation:</strong> Ensures data matches expected types</li>
+                <li><strong>Automatic Conversion:</strong> Converts compatible types (e.g., "25" to 25)</li>
+                <li><strong>Default Values:</strong> Supports optional fields with defaults</li>
+                <li><strong>Schema Generation:</strong> Auto-generates JSON Schema from models</li>
+                <li><strong>Error Messages:</strong> Clear validation error messages</li>
+            </ul>
+        </div>
+
+        <!-- Why Pydantic for LangChain -->
+        <div class="section">
+            <h2><span class="icon">🔗</span> Why LangChain Needs Pydantic</h2>
+            <p>
+                LangChain uses Pydantic models to define tool schemas. When an AI agent calls a tool,
+                LangChain needs to know <span class="highlight">what arguments the tool expects</span> and their types.
+            </p>
+
+            <div class="diagram">
+                <div class="flow-container">
+                    <div class="diagram-box">AI Model<br><small>(GPT-4)</small></div>
+                    <span class="diagram-arrow">→</span>
+                    <div class="diagram-box">Pydantic Schema<br><small>(validates args)</small></div>
+                    <span class="diagram-arrow">→</span>
+                    <div class="diagram-box">Tool Function<br><small>(executes)</small></div>
+                </div>
+            </div>
+
+            <div class="code-block">
+<pre><span class="comment"># LangChain tool with Pydantic schema</span>
+<span class="keyword">from</span> langchain.tools <span class="keyword">import</span> StructuredTool
+<span class="keyword">from</span> pydantic.v1 <span class="keyword">import</span> BaseModel, Field
+
+<span class="keyword">class</span> <span class="class">CreateNotebookArgs</span>(BaseModel):
+    <span class="string">"""Arguments for creating a notebook"""</span>
+    path: <span class="variable">str</span> = Field(description=<span class="string">"Workspace path for notebook"</span>)
+    language: <span class="variable">str</span> = Field(default=<span class="string">"PYTHON"</span>, description=<span class="string">"Language"</span>)
+
+tool = StructuredTool.from_function(
+    func=create_notebook,
+    name=<span class="string">"workspace_import"</span>,
+    args_schema=CreateNotebookArgs  <span class="comment"># ← Pydantic tells LangChain the args</span>
+)</pre>
+            </div>
+        </div>
+
+        <!-- The Version Problem -->
+        <div class="section">
+            <h2><span class="icon">⚠️</span> The Pydantic Version Problem</h2>
+
+            <div class="problem-box">
+                <h3 style="color: #ff6b6b; margin-top: 0;">The Error We Encountered</h3>
+                <div class="code-block" style="margin-bottom: 0;">
+<pre><span class="comment">ValidationError: 1 validation error for StructuredTool
+args_schema
+  subclass of BaseModel expected (type=type_error.subclass; expected_class=BaseModel)</span></pre>
+                </div>
+            </div>
+
+            <p>
+                Pydantic has two major versions with <span class="highlight">incompatible APIs</span>:
+            </p>
+
+            <table class="comparison-table">
+                <tr>
+                    <th>Feature</th>
+                    <th><span class="version-badge v1">Pydantic v1</span></th>
+                    <th><span class="version-badge v2">Pydantic v2</span></th>
+                </tr>
+                <tr>
+                    <td>Import</td>
+                    <td><code>from pydantic import BaseModel</code></td>
+                    <td><code>from pydantic import BaseModel</code></td>
+                </tr>
+                <tr>
+                    <td>Compatibility Layer</td>
+                    <td>N/A (native)</td>
+                    <td><code>from pydantic.v1 import BaseModel</code></td>
+                </tr>
+                <tr>
+                    <td>LangChain Uses</td>
+                    <td style="color: #64ffda;">✓ Yes (internally)</td>
+                    <td style="color: #ff6b6b;">✗ Not directly</td>
+                </tr>
+                <tr>
+                    <td>Default in Python 3.9+</td>
+                    <td>No</td>
+                    <td style="color: #64ffda;">✓ Yes</td>
+                </tr>
+            </table>
+
+            <div class="solution-box">
+                <h3 style="color: #64ffda; margin-top: 0;">The Solution</h3>
+                <p style="margin-bottom: 0;">
+                    LangChain internally uses Pydantic v1 compatibility layer. We must import from
+                    <code style="color: #64ffda;">pydantic.v1</code> to create compatible models!
+                </p>
+            </div>
+        </div>
+
+        <!-- Dynamic Model Creation -->
+        <div class="section">
+            <h2><span class="icon">🔧</span> Dynamic Pydantic Model Creation</h2>
+            <p>
+                In our self-evolving agent, we don't know tool schemas at compile time - they're
+                <span class="highlight">discovered at runtime</span>. We use <code>create_model()</code> to
+                dynamically generate Pydantic models from JSON schemas.
+            </p>
+
+            <h3>The Flow</h3>
+            <div class="diagram">
+                <div class="flow-container">
+                    <div class="diagram-box">JSON Schema<br><small>(from evolved_tools.json)</small></div>
+                    <span class="diagram-arrow">→</span>
+                    <div class="diagram-box">create_model_v1()<br><small>(dynamic creation)</small></div>
+                    <span class="diagram-arrow">→</span>
+                    <div class="diagram-box">Pydantic Model<br><small>(LangChain compatible)</small></div>
+                </div>
+            </div>
+
+            <h3>Input: JSON Schema (from evolved_tools.json)</h3>
+            <div class="code-block">
+<pre>{
+  <span class="string">"workspace_import"</span>: {
+    <span class="string">"inputSchema"</span>: {
+      <span class="string">"type"</span>: <span class="string">"object"</span>,
+      <span class="string">"properties"</span>: {
+        <span class="string">"path"</span>: {
+          <span class="string">"type"</span>: <span class="string">"string"</span>,
+          <span class="string">"description"</span>: <span class="string">"Workspace path for the notebook"</span>
+        },
+        <span class="string">"language"</span>: {
+          <span class="string">"type"</span>: <span class="string">"string"</span>,
+          <span class="string">"description"</span>: <span class="string">"Language: PYTHON, SQL, SCALA, or R"</span>,
+          <span class="string">"default"</span>: <span class="string">"PYTHON"</span>
+        },
+        <span class="string">"content"</span>: {
+          <span class="string">"type"</span>: <span class="string">"string"</span>,
+          <span class="string">"description"</span>: <span class="string">"Notebook content"</span>
+        }
+      },
+      <span class="string">"required"</span>: [<span class="string">"path"</span>, <span class="string">"content"</span>]
+    }
+  }
+}</pre>
+            </div>
+
+            <h3>The Transformation Function</h3>
+            <div class="code-block">
+<pre><span class="keyword">from</span> typing <span class="keyword">import</span> Optional
+<span class="keyword">from</span> pydantic.v1 <span class="keyword">import</span> BaseModel <span class="keyword">as</span> BaseModelV1, Field <span class="keyword">as</span> FieldV1, create_model <span class="keyword">as</span> create_model_v1
+
+<span class="keyword">def</span> <span class="function">create_pydantic_model_from_schema</span>(tool_name: <span class="variable">str</span>, input_schema: <span class="variable">dict</span>) -> <span class="variable">type</span>:
+    <span class="string">"""Create a Pydantic v1 model dynamically from inputSchema"""</span>
+    properties = input_schema.get(<span class="string">"properties"</span>, {})
+    required = set(input_schema.get(<span class="string">"required"</span>, []))
+
+    field_definitions = {}
+
+    <span class="keyword">for</span> prop_name, prop_def <span class="keyword">in</span> properties.items():
+        prop_type = prop_def.get(<span class="string">"type"</span>, <span class="string">"string"</span>)
+        description = prop_def.get(<span class="string">"description"</span>, <span class="string">""</span>)
+        default = prop_def.get(<span class="string">"default"</span>, <span class="keyword">None</span>)
+
+        <span class="comment"># Map JSON schema types to Python types</span>
+        type_mapping = {
+            <span class="string">"string"</span>: <span class="variable">str</span>,
+            <span class="string">"integer"</span>: <span class="variable">int</span>,
+            <span class="string">"number"</span>: <span class="variable">float</span>,
+            <span class="string">"boolean"</span>: <span class="variable">bool</span>,
+            <span class="string">"array"</span>: <span class="variable">list</span>,
+            <span class="string">"object"</span>: <span class="variable">dict</span>
+        }
+        python_type = type_mapping.get(prop_type, <span class="variable">str</span>)
+
+        <span class="comment"># Required fields have no default; optional fields use Optional[]</span>
+        <span class="keyword">if</span> prop_name <span class="keyword">in</span> required:
+            field_definitions[prop_name] = (python_type, FieldV1(description=description))
+        <span class="keyword">else</span>:
+            field_definitions[prop_name] = (Optional[python_type], FieldV1(default=default, description=description))
+
+    <span class="comment"># Create dynamic model with v1 base class</span>
+    model_name = f<span class="string">"{tool_name.title().replace('_', '')}Args"</span>
+    <span class="keyword">return</span> create_model_v1(model_name, __base__=BaseModelV1, **field_definitions)</pre>
+            </div>
+
+            <h3>Output: Dynamic Pydantic Model</h3>
+            <div class="code-block">
+<pre><span class="comment"># This is equivalent to writing:</span>
+<span class="keyword">class</span> <span class="class">WorkspaceImportArgs</span>(BaseModelV1):
+    path: <span class="variable">str</span> = FieldV1(description=<span class="string">"Workspace path for the notebook"</span>)
+    content: <span class="variable">str</span> = FieldV1(description=<span class="string">"Notebook content"</span>)
+    language: Optional[<span class="variable">str</span>] = FieldV1(default=<span class="string">"PYTHON"</span>, description=<span class="string">"Language"</span>)
+    format: Optional[<span class="variable">str</span>] = FieldV1(default=<span class="string">"SOURCE"</span>, description=<span class="string">"Format"</span>)
+    overwrite: Optional[<span class="variable">bool</span>] = FieldV1(default=<span class="keyword">False</span>, description=<span class="string">"Overwrite existing"</span>)</pre>
+            </div>
+        </div>
+
+        <!-- How It Connects -->
+        <div class="section">
+            <h2><span class="icon">🔄</span> Complete Flow: Evolution to Execution</h2>
+
+            <div class="step-container">
+                <p><span class="step-number">1</span> <strong>Tool Evolution:</strong> MCP server discovers new API capabilities</p>
+                <div class="code-block">
+<pre><span class="comment"># Server generates tool definition with inputSchema</span>
+DYNAMIC_TOOLS[<span class="string">"workspace_import"</span>] = {
+    <span class="string">"name"</span>: <span class="string">"workspace_import"</span>,
+    <span class="string">"inputSchema"</span>: {...}  <span class="comment"># JSON schema</span>
+}
+save_evolved_tools()  <span class="comment"># Persist to evolved_tools.json</span></pre>
+                </div>
+
+                <p><span class="step-number">2</span> <strong>Load Tools:</strong> App fetches tools and creates Pydantic models</p>
+                <div class="code-block">
+<pre><span class="comment"># In app.py - refresh_tools()</span>
+<span class="keyword">for</span> tool_def <span class="keyword">in</span> dynamic_tool_defs:
+    <span class="comment"># Convert JSON schema to Pydantic v1 model</span>
+    args_schema = create_pydantic_model_from_schema(
+        tool_def[<span class="string">"name"</span>],
+        tool_def.get(<span class="string">"inputSchema"</span>, {})
+    )
+
+    <span class="comment"># Create LangChain tool with schema</span>
+    new_tool = StructuredTool.from_function(
+        func=wrapper,
+        name=tool_def[<span class="string">"name"</span>],
+        args_schema=args_schema  <span class="comment"># ← Pydantic model tells LangChain the args!</span>
+    )</pre>
+                </div>
+
+                <p><span class="step-number">3</span> <strong>AI Calls Tool:</strong> LangChain uses schema to validate arguments</p>
+                <div class="code-block">
+<pre><span class="comment"># AI decides to call workspace_import</span>
+<span class="comment"># LangChain validates args using the Pydantic model:</span>
+args = WorkspaceImportArgs(
+    path=<span class="string">"/Users/user/my_notebook"</span>,
+    content=<span class="string">"print('hello')"</span>,
+    language=<span class="string">"PYTHON"</span>
+)
+<span class="comment"># ✓ Validation passes - all required fields present and correct types</span></pre>
+                </div>
+
+                <p><span class="step-number">4</span> <strong>Execute:</strong> Validated arguments sent to MCP server</p>
+                <div class="code-block">
+<pre><span class="comment"># wrapper function sends to MCP server</span>
+<span class="keyword">def</span> <span class="function">wrapper</span>(**kwargs) -> <span class="variable">str</span>:
+    <span class="keyword">return</span> call_mcp_tool(<span class="string">"workspace_import"</span>, kwargs)
+    <span class="comment"># kwargs = {"path": "/Users/user/my_notebook", "content": "...", "language": "PYTHON"}</span></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Why This Matters -->
+        <div class="section">
+            <h2><span class="icon">💡</span> Why This Architecture Matters</h2>
+
+            <table class="comparison-table">
+                <tr>
+                    <th>Without Pydantic Schema</th>
+                    <th>With Pydantic Schema</th>
+                </tr>
+                <tr>
+                    <td style="color: #ff6b6b;">AI doesn't know required arguments</td>
+                    <td style="color: #64ffda;">AI knows exactly what arguments to provide</td>
+                </tr>
+                <tr>
+                    <td style="color: #ff6b6b;">Arguments may be missing or wrong type</td>
+                    <td style="color: #64ffda;">Arguments validated before function call</td>
+                </tr>
+                <tr>
+                    <td style="color: #ff6b6b;">Errors happen at execution time</td>
+                    <td style="color: #64ffda;">Errors caught during argument parsing</td>
+                </tr>
+                <tr>
+                    <td style="color: #ff6b6b;">path="" (empty string passed)</td>
+                    <td style="color: #64ffda;">path="/Users/user/notebook" (correct value)</td>
+                </tr>
+            </table>
+
+            <div class="solution-box">
+                <h3 style="color: #64ffda; margin-top: 0;">The Key Insight</h3>
+                <p style="margin-bottom: 0;">
+                    Pydantic acts as the <span class="highlight">contract</span> between the AI model and the tool function.
+                    It tells the AI "here's what I need" and validates "here's what you gave me" -
+                    ensuring reliable tool execution in a self-evolving system where tools are discovered at runtime.
+                </p>
+            </div>
+        </div>
+
+        <!-- Quick Reference -->
+        <div class="section">
+            <h2><span class="icon">📋</span> Quick Reference</h2>
+
+            <h3>Key Imports</h3>
+            <div class="code-block">
+<pre><span class="comment"># For LangChain compatibility - MUST use v1</span>
+<span class="keyword">from</span> pydantic.v1 <span class="keyword">import</span> BaseModel, Field, create_model
+
+<span class="comment"># Regular pydantic v2 (NOT compatible with LangChain)</span>
+<span class="keyword">from</span> pydantic <span class="keyword">import</span> BaseModel  <span class="comment"># ❌ Don't use for LangChain</span></pre>
+            </div>
+
+            <h3>Type Mapping</h3>
+            <table class="comparison-table">
+                <tr>
+                    <th>JSON Schema Type</th>
+                    <th>Python Type</th>
+                    <th>Example</th>
+                </tr>
+                <tr><td>"string"</td><td>str</td><td>"hello"</td></tr>
+                <tr><td>"integer"</td><td>int</td><td>42</td></tr>
+                <tr><td>"number"</td><td>float</td><td>3.14</td></tr>
+                <tr><td>"boolean"</td><td>bool</td><td>True</td></tr>
+                <tr><td>"array"</td><td>list</td><td>[1, 2, 3]</td></tr>
+                <tr><td>"object"</td><td>dict</td><td>{"key": "value"}</td></tr>
+            </table>
+
+            <h3>Field Definition Patterns</h3>
+            <div class="code-block">
+<pre><span class="comment"># Required field (no default)</span>
+(str, FieldV1(description=<span class="string">"Required field"</span>))
+
+<span class="comment"># Optional field with default</span>
+(Optional[str], FieldV1(default=<span class="string">"value"</span>, description=<span class="string">"Optional"</span>))
+
+<span class="comment"># Optional field, default None</span>
+(Optional[int], FieldV1(default=<span class="keyword">None</span>, description=<span class="string">"Optional int"</span>))</pre>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Pydantic Schema System | Databricks Self-Evolving Agent</p>
+            <p style="margin-top: 5px;">Using pydantic.v1 for LangChain compatibility</p>
+        </div>
+    </div>
+</body>
+</html>
