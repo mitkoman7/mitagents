@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Environment variables
+.env
+*.env
+
+# macOS
+.DS_Store
+.AppleDouble
+
+# Logs
+logs/
+*.log
+
+# Node
+node_modules/
+
+# Archives
+*.zip
+*.tar.gz
+
+# IDE
+.idea/
+.vscode/
+*.swp
