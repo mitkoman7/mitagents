@@ -5,7 +5,11 @@ AI-powered terminal interface for Databricks using MCP
 """
 
 import os
+import sys
 import json
+import time
+import subprocess
+import webbrowser
 import httpx
 from typing import Optional, Any
 from dotenv import load_dotenv
@@ -566,5 +570,49 @@ def main():
             print("\n\nGoodbye!")
             break
 
+def start_ui():
+    """Start MCP server + Flask UI and open browser."""
+    base = os.path.dirname(os.path.abspath(__file__))
+
+    print("=" * 50)
+    print("  DXC Databricks Assistant - Web UI Mode")
+    print("=" * 50)
+
+    # Start MCP server if not already running
+    if not check_mcp_server():
+        print("  Starting MCP server...")
+        subprocess.Popen(
+            [sys.executable, os.path.join(base, "mcp_server.py")],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        # Wait up to 10s for it to come up
+        for _ in range(20):
+            time.sleep(0.5)
+            if check_mcp_server():
+                print("  MCP Server: Ready")
+                break
+        else:
+            print("  MCP Server: Failed to start (continuing anyway)")
+    else:
+        print("  MCP Server: Already running")
+
+    port = int(os.getenv("PORT", 5055))
+    print(f"  Opening http://localhost:{port} ...")
+    print("=" * 50)
+
+    # Only open browser in local mode (not in Docker/Azure)
+    if not os.getenv("WEBSITE_INSTANCE_ID"):  # Azure sets this
+        webbrowser.open(f"http://localhost:{port}")
+
+    # Start Flask
+    from ui import app as flask_app
+    port = int(os.getenv("PORT", 5055))
+    flask_app.run(host="0.0.0.0", port=port, debug=False)
+
+
 if __name__ == "__main__":
-    main()
+    if "--ui" in sys.argv:
+        start_ui()
+    else:
+        main()

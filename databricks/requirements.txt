@@ -11,5 +11,8 @@ langchain==0.1.4
 langchain-openai==0.0.3
 openai==1.10.0
 
+# Web UI
+flask==3.0.0
+
 # Environment
 python-dotenv==1.0.0
