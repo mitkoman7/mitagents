@@ -1,15 +1,11 @@
 export default function StatusBar({ connected }) {
-  const label = connected === null ? 'Checking...' : connected ? 'MCP Connected' : 'MCP Offline'
-  const color = connected === null ? '#8892aa' : connected ? '#22c55e' : '#ef4444'
+  const state = connected === null ? 'checking' : connected ? 'connected' : 'disconnected'
+  const labels = { checking: 'CHECKING', connected: 'MCP ONLINE', disconnected: 'MCP OFFLINE' }
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color }}>
-      <span style={{
-        width: 8, height: 8, borderRadius: '50%', background: color,
-        boxShadow: connected ? `0 0 6px ${color}` : 'none',
-        animation: connected ? 'pulse 2s infinite' : 'none'
-      }} />
-      {label}
-      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }`}</style>
+    <div className="status-wrapper">
+      <span className={`status-dot ${state}`} />
+      <span className={`status-text ${state}`}>{labels[state]}</span>
     </div>
   )
 }

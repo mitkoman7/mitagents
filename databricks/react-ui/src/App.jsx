@@ -11,7 +11,7 @@ export default function App() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [mcpStatus, setMcpStatus] = useState(null)
-  const [liveActivity, setLiveActivity] = useState('')   // current tool being called
+  const [liveActivity, setLiveActivity] = useState('')
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -82,7 +82,12 @@ export default function App() {
         }
       }
     } catch (e) {
-      setMessages(prev => [...prev, { id: Date.now() + 1, role: 'assistant', text: `Connection error: ${e.message}`, activities: [] }])
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        role: 'assistant',
+        text: `Connection error: ${e.message}`,
+        activities: [],
+      }])
     } finally {
       setLoading(false)
       setLiveActivity('')
@@ -106,17 +111,17 @@ export default function App() {
     <div className="app">
       <header className="header">
         <div className="header-left">
-          <div className="header-icon">
-            <img src={databricksLogo} alt="Databricks" style={{ width: 26, height: 26, objectFit: 'contain' }} />
+          <div className="header-logo">
+            <img src={databricksLogo} alt="Databricks" />
           </div>
-          <div>
-            <div className="header-title">Databricks AI Assistant</div>
-            <div className="header-subtitle">Self-Evolving Agent · Azure OpenAI</div>
+          <div className="header-wordmark">
+            <div className="header-title">DATABRICKS ASSISTANT</div>
+            <div className="header-subtitle">Self-Evolving · Azure OpenAI · MCP</div>
           </div>
         </div>
         <div className="header-right">
           <StatusBar connected={mcpStatus} />
-          <button className="icon-btn" onClick={clearChat} title="Clear conversation">🗑</button>
+          <button className="clear-btn" onClick={clearChat} title="Clear conversation">⌫</button>
         </div>
       </header>
 
@@ -126,18 +131,19 @@ export default function App() {
         ))}
 
         {loading && (
-          <div className="message assistant">
-            <div className="avatar">
-              <img src={databricksLogo} alt="Databricks" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 6 }} />
+          <div className="msg-row assistant">
+            <div className="avatar assistant-avatar">
+              <img src={databricksLogo} alt="Databricks" />
             </div>
-            <div className="message-body">
+            <div className="msg-body">
               {liveActivity && (
                 <div className="live-activity">
                   <span className="live-dot" />
-                  Calling: <strong>{liveActivity}</strong>
+                  <span>executing</span>
+                  <strong>{liveActivity}</strong>
                 </div>
               )}
-              <div className="bubble typing">
+              <div className="bubble assistant-bubble typing">
                 <span /><span /><span />
               </div>
             </div>
@@ -160,10 +166,10 @@ export default function App() {
             disabled={loading}
           />
           <button className="send-btn" onClick={sendMessage} disabled={loading || !input.trim()}>
-            {loading ? '⏳' : '▶'}
+            {loading ? '◌' : '↑'}
           </button>
         </div>
-        <div className="input-hint">Enter to send · Shift+Enter for new line</div>
+        <div className="input-hint">↵ send &nbsp;·&nbsp; ⇧↵ new line</div>
       </footer>
     </div>
   )

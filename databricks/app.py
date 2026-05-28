@@ -249,6 +249,97 @@ def find_notebooks_func(path: str = "/") -> str:
     """Find all notebooks recursively in a path"""
     return call_mcp_tool("find_notebooks", {"path": path})
 
+def generate_schema_func(description: str) -> str:
+    """Generate a schema drawing by first fetching real Databricks tables, then using o4-mini"""
+    try:
+        from langchain_openai import AzureChatOpenAI
+
+        # Step 1: fetch real tables and columns from Databricks
+        schema_data = []
+
+        # Get schemas, pick ones matching the description or default to 'default'
+        dbs_raw = json.loads(call_mcp_tool("list_databases", {}))
+        all_schemas = dbs_raw.get("schemas", [])  # e.g. ["addof.bronze", "hive_metastore.default"]
+        # also include bare schema names
+        schemas_flat = [s.split(".")[-1] for s in all_schemas]
+
+        # Pick target: mentioned in description, else "default"
+        desc_lower = description.lower()
+        target_dbs = list({s.split(".")[-1] for s in all_schemas
+                           if s.split(".")[-1] in desc_lower}) or ["default"]
+
+        for db in target_dbs:
+            tables_raw = json.loads(call_mcp_tool("list_tables", {"schema": db}))
+            tables = tables_raw.get("tables", [])
+            for table in tables:
+                cols_raw = json.loads(call_mcp_tool("get_table_schema", {"table_name": table, "schema": db}))
+                cols = cols_raw.get("columns", [])
+                # Mermaid erDiagram can't parse types with parens/commas (e.g. decimal(10,2))
+                # Strip any parenthesized suffix so varchar(255) → varchar, decimal(10,2) → decimal
+                import re as _re
+                def _clean_type(t):
+                    return _re.sub(r'\(.*?\)', '', t).strip().replace(' ', '_') or 'string'
+                col_lines = "\n".join(f"  {_clean_type(c['type'])} {c['name']}" for c in cols)
+                schema_data.append(f"Table: {db}.{table}\nColumns:\n{col_lines}")
+
+        real_schema = "\n\n".join(schema_data) if schema_data else "No tables found."
+
+        # Step 2: pass real schema to o4-mini to draw
+        o4_llm = AzureChatOpenAI(
+            azure_endpoint="https://openmit.openai.azure.com/",
+            api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+            api_version="2024-12-01-preview",
+            deployment_name="o4-mini",
+            temperature=1,
+        )
+
+        prompt = f"""You are an expert data architect. Below are the REAL tables and columns from a Databricks workspace.
+
+REAL SCHEMA DATA:
+{real_schema}
+
+USER REQUEST: {description}
+
+Generate a Mermaid erDiagram using ONLY the real tables and columns above.
+STRICT RULES — the diagram will fail to render if violated:
+1. Types must be simple words with NO parentheses: use "decimal" not "decimal(10,2)", "varchar" not "varchar(255)"
+2. Every relationship line MUST end with a quoted label: users ||--o{{ orders : "places"
+   WRONG: users ||--o{{ orders
+   RIGHT: users ||--o{{ orders : "places"
+3. One relationship per line — never combine two on the same line
+4. Return ONLY the Mermaid code block, nothing else
+
+Example of correct syntax:
+```mermaid
+erDiagram
+    users {{
+        int id
+        varchar name
+    }}
+    orders {{
+        int id
+        int user_id
+    }}
+    users ||--o{{ orders : "places"
+```
+"""
+        response = o4_llm.invoke(prompt)
+        result = response.content
+
+        # Post-process: add missing labels on relationship lines
+        import re as _re2
+        rel_pattern = _re2.compile(
+            r'^(\s*\w+\s+[\|\}o\{]+[-\.]+[\|\}o\{]+\s+\w+)\s*$',
+            _re2.MULTILINE
+        )
+        result = rel_pattern.sub(r'\1 : "ref"', result)
+
+        if "```mermaid" not in result:
+            result = f"```mermaid\n{result}\n```"
+        return result
+    except Exception as e:
+        return f"Schema generation error: {str(e)}"
+
 # Create tools
 tools = [
     StructuredTool.from_function(
@@ -366,6 +457,11 @@ tools = [
         func=evolve_list_func,
         name="evolve_list",
         description="List all dynamically evolved/discovered tools"
+    ),
+    StructuredTool.from_function(
+        func=generate_schema_func,
+        name="generate_schema",
+        description="Generate a schema drawing or diagram using the o4-mini thinking model. Use this ONLY when the user explicitly asks to 'generate schema', 'draw schema', 'create diagram', 'show schema', or 'schema drawing'. Supports ER diagrams, flowcharts, class diagrams, sequence diagrams using Mermaid syntax."
     )
 ]
 
@@ -419,6 +515,7 @@ CURRENT TOOLS (built-in):
 - search_tables, get_table_preview, get_table_stats, list_catalogs
 - evolve_discover (CRITICAL - adds new capabilities)
 - evolve_list (see evolved tools)
+- generate_schema (uses o4-mini thinking model — ONLY when user asks for schema/diagram drawing)
 
 MANDATORY SELF-EVOLUTION RULE:
 If the user asks for ANY of these, you MUST call evolve_discover FIRST:
